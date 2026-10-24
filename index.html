@@ -141,7 +141,8 @@ const glow2 = new THREE.PointLight(0xff8a30, 0, 10, 2); glow2.position.set(7.7, 
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), mConc); floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
 const ring = new THREE.Mesh(new THREE.RingGeometry(7.6, 7.78, 96), mYellow); ring.rotation.x = -Math.PI/2; ring.position.y = .012; scene.add(ring);
 for (const z of [-1.15, 1.15]) add(scene, new THREE.BoxGeometry(20, .12, .22), STD(0x55585e, .4, .9), 13.5, .06, z);
-for (let x = -36; x <= 72; x += 12) { add(scene, new THREE.BoxGeometry(1, 30, 1), mDark, x, 15, -24); add(scene, new THREE.BoxGeometry(.3, 30, 1.6), mDark, x, 15, -24); }
+const hallCols = [];
+for (let x = -36; x <= 72; x += 12) { hallCols.push(add(scene, new THREE.BoxGeometry(1, 30, 1), mDark, x, 15, -24), add(scene, new THREE.BoxGeometry(.3, 30, 1.6), mDark, x, 15, -24)); }
 add(scene, new THREE.BoxGeometry(160, 1.6, 1.2), mDark, 18, 21, -24);
 const crane = new THREE.Group(); crane.position.y = 21.5; scene.add(crane);
 add(crane, new THREE.BoxGeometry(130, 1.1, 1.1), STD(0x3a3d44, .5, .8), 18, 0, 0);
@@ -470,6 +471,7 @@ function frame(dt) {
   scene.fog.near = r*1.1; scene.fog.far = r*2.6; // fog keeps the same feel at every zoom
   const px = pan.x.step(dt), pz = pan.z.step(dt);
   camera.position.set(cxv + px + r*Math.sin(p)*Math.sin(a), Math.max(1.2, 3.6 + r*Math.cos(p)), pz + r*Math.sin(p)*Math.cos(a)); camera.lookAt(cxv + px, 3.6, pz); // camera never goes below the floor
+  for (const c of hallCols) c.visible = Math.hypot(camera.position.x - c.position.x, camera.position.z - c.position.z) > 7; // a hall column next to the lens would fill the screen with black
   composer.render();
 }
 
