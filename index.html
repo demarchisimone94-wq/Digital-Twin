@@ -280,7 +280,8 @@ const caster = new THREE.Group(); scene.add(caster);
 for (const [x, z] of [[-1.8, -1.8], [1.8, -1.8], [-1.8, 1.8], [1.8, 1.8]]) add(caster, new THREE.BoxGeometry(.5, 11.4, .5), mTower, CX + x, 5.7, z);
 for (const y of [4, 8, 11.4]) { add(caster, new THREE.BoxGeometry(4.2, .3, .3), mTower, CX, y, -1.8); add(caster, new THREE.BoxGeometry(4.2, .3, .3), mTower, CX, y, 1.8); add(caster, new THREE.BoxGeometry(.3, .3, 4.2), mTower, CX - 1.8, y, 0); add(caster, new THREE.BoxGeometry(.3, .3, 4.2), mTower, CX + 1.8, y, 0); }
 add(caster, new THREE.BoxGeometry(3.0, .8, 2.2), STD(0x3a3e45, .7, .4, { map: steel }), CX, 12.3, 0);        // tundish
-add(caster, new THREE.BoxGeometry(.9, 1.4, .9), mCopper, CX, MOLD_Y + .7, 0);                                  // copper mold
+add(caster, new THREE.BoxGeometry(.9, .18, .9), mCopper, CX, MOLD_Y + 1.31, 0); add(caster, new THREE.BoxGeometry(1.05, 1.25, 1.05), mTower, CX, MOLD_Y + .6, 0); // copper mold in its steel jacket
+add(caster, new THREE.BoxGeometry(2.6, .2, 2.0), mTower, CX, MOLD_Y, 0); for (const z of [-.95, .95]) add(caster, new THREE.BoxGeometry(.2, 1.5, .2), mTower, CX, MOLD_Y + .85, z); // mold table, tied to the deck above                                  // copper mold
 const mStrand = new THREE.MeshBasicMaterial({ color: HOT });
 const strandV = new THREE.Mesh(new THREE.CylinderGeometry(STRAND_R, STRAND_R, 1, 12), mStrand); caster.add(strandV);
 const strandH = new THREE.Mesh(new THREE.CylinderGeometry(STRAND_R, STRAND_R, 1, 12), mStrand); strandH.rotation.z = Math.PI/2; caster.add(strandH);
@@ -615,6 +616,9 @@ window.__ready = true;
 .scale { display: flex; justify-content: space-between; color: var(--ink3); font-size: 11px; margin-top: 5px; }
 .bar .g { position: absolute; top: 0; bottom: 0; background: var(--c); border-radius: 5px; transition: left .45s cubic-bezier(.2,.8,.2,1), width .45s cubic-bezier(.2,.8,.2,1); }
 .trio { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 12px; }
+.xrow { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.1); font-size: 13px; color: var(--ink2); }
+.xrow i { font-style: normal; font-size: 11px; opacity: .6; margin-left: 4px; }
+.xrow b { color: var(--ink, #fff); font-weight: 600; }
 .trio span { display: block; color: var(--ink2); font-size: 12px; }
 .bal { padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.1); }
 .trio > div + div { border-left: 1px solid rgba(255,255,255,.1); padding-left: 10px; }
@@ -700,6 +704,7 @@ body.ov .ovhint { display: block; }
     <div class="lbl"><span>Liquido letto rispetto all’atteso</span><em class="num" id="cGap"></em></div>
     <div class="bar"><div class="g" id="bG"></div></div><div class="scale"><span>−1 t</span><span>atteso</span><span>+1 t</span></div>
     <div class="trio"><div><span>Caricato</span><b class="num" id="cC"></b></div><div><span>Letto</span><b class="num" id="cL"></b></div><div><span>Atteso</span><b class="num" id="cA"></b></div></div>
+    <div class="xrow"><span>Barre pesate <i>verifica</i></span><b class="num" id="cB">—</b></div>
   </div>
   <div class="sec"><h3>MAM per colata</h3><svg class="spark" id="spark" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
     <div class="leg"><span style="--c:var(--ink3)">ufficiale</span><span style="--c:var(--green)">corretta</span></div></div>
@@ -833,7 +838,7 @@ $('back').addEventListener('click', () => { const T = window.__twin; if (T.overv
     // the bar scale keeps its total after the crane has taken the bars away
     if (t < 55) maxW = 0; maxW = t >= 72.5 ? 1 : Math.max(maxW, T.weighed);
     show($('t3'), maxW > .02);
-    $('t3v').textContent = kg(Math.round(d.a*.975*maxW/10)*10); // bars weigh what was really poured (≈97,5% of the liquid), the cross-check on the ladle reading
+    $('t3v').textContent = $('cB').textContent = maxW > .02 ? kg(Math.round(d.a*.975*maxW/10)*10) : '—'; // bars weigh what was really poured (≈97,5% of the liquid), the cross-check on the ladle reading
     pj(-11.5, 4.2, 0, $('t1')); pj(7.7, 5.2, 0, $('t2')); pj(39.5, 3.6, 0, $('t3'));
     if (T.overview) document.querySelectorAll('.st').forEach(b => pj(...SPOT[b.dataset.id], b));
   }
