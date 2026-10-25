@@ -610,6 +610,8 @@ window.__ready = true;
 .insp { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); top: max(16px, env(safe-area-inset-top, 0px)); width: var(--ip);
   max-height: calc(100% - 32px); overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 22px; scrollbar-width: none; }
 .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.hd { flex-wrap: wrap; row-gap: 6px; }
+.hd h2, .hd p { white-space: nowrap; }
 .hd h2 { font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
 .hd p { color: var(--ink2); font-size: 13px; margin-top: 1px; }
 .pill { flex: none; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 99px; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
@@ -811,7 +813,8 @@ function live(t, yard, fill) {
   const d = C[cur], st = ST[d.s], gap = d.l - d.a, done = t >= 72.5, tapping = t >= 47.2;
   $('cC').textContent = t > .35 ? kg(Math.round(d.c*yard/10)*10) : '—';
   $('cA').textContent = done ? kg(d.a) : '—'; // the expected liquid comes from the bars, so it exists only once the bar scale has finished
-  $('cL').textContent = tapping ? kg(done ? d.l : Math.min(d.l, Math.round(d.a*fill/10)*10)) : '—';
+  const lf = t >= 55 ? 1 : fill; // once the ladle leaves the scale its reading is final, even while it empties into the caster
+  $('cL').textContent = tapping ? kg(done ? d.l : Math.min(d.l, Math.round(d.a*lf/10)*10)) : '—';
   if (done === lastDone) return; lastDone = done;
   const p = $('cPill'), bal = document.querySelector('.bal');
   if (done) {
