@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Forno ad arco</title>
+<title>Arc furnace twin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 :root {
@@ -41,14 +41,14 @@ button:focus-visible, .strip:focus-visible { outline: 1px solid var(--accent); o
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-<div id="stage"><canvas id="gl" role="img" aria-label="Forno elettrico ad arco in 3D"></canvas></div>
-<div class="title"><h1>Forno elettrico ad arco</h1><p>Scena 3D · replay simulato</p></div>
-<div class="hint" id="hint">Trascina per ruotare · scorri per lo zoom</div>
+<div id="stage"><canvas id="gl" role="img" aria-label="Electric arc furnace in 3D"></canvas></div>
+<div class="title"><h1>Electric arc furnace</h1><p>3D scene · simulated replay</p></div>
+<div class="hint" id="hint">Drag to rotate · scroll to zoom</div>
 <div class="dock">
-  <button class="btn" id="play" type="button" aria-label="Pausa"></button>
+  <button class="btn" id="play" type="button" aria-label="Pause"></button>
   <div class="track">
-    <div class="tabs" role="tablist" aria-label="Fase" id="tabs"></div>
-    <div class="strip" id="strip" role="slider" tabindex="0" aria-label="Avanzamento della colata" aria-valuemin="0" aria-valuemax="75" aria-valuenow="0"><div class="segs" id="segs"></div><div class="head" id="head"></div></div>
+    <div class="tabs" role="tablist" aria-label="Phase" id="tabs"></div>
+    <div class="strip" id="strip" role="slider" tabindex="0" aria-label="Heat progress" aria-valuemin="0" aria-valuemax="75" aria-valuenow="0"><div class="segs" id="segs"></div><div class="head" id="head"></div></div>
   </div>
 </div>
 
@@ -74,7 +74,7 @@ class Spring {
   set(x) { this.x = this.t = x; this.v = 0; }
 }
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const PH = [ {id:'carica',label:'Carica',from:0,to:7}, {id:'fusione',label:'Fusione',from:7,to:47}, {id:'colata',label:'Colata',from:47,to:55}, {id:'taglio',label:'Taglio',from:55,to:75} ];
+const PH = [ {id:'carica',label:'Charging',from:0,to:7}, {id:'fusione',label:'Melting',from:7,to:47}, {id:'colata',label:'Tapping',from:47,to:55}, {id:'taglio',label:'Cutting',from:55,to:75} ];
 const END = 75;
 function model(t) {
   const phase = PH.find(p => t < p.to) || PH.at(-1);
@@ -548,7 +548,7 @@ function sync() {
   [...tabs.children].forEach(b => b.setAttribute('aria-selected', !overview && b.dataset.id === m.phase.id));
   [...segs.children].forEach((s, i) => { const p = PH[i]; s.firstChild.style.width = clamp((t - p.from)/(p.to - p.from))*100 + '%'; });
   head.style.left = (posOf(t)*100) + '%'; strip.setAttribute('aria-valuenow', Math.round(t)); strip.setAttribute('aria-valuetext', m.phase.label);
-  const st = playing ? 'pause' : (t >= END ? 'again' : 'play'); if (playBtn.dataset.st !== st) { playBtn.dataset.st = st; playBtn.innerHTML = ICON[st]; playBtn.setAttribute('aria-label', { pause: 'Pausa', again: 'Ripeti', play: 'Riproduci' }[st]); } applyTargets();
+  const st = playing ? 'pause' : (t >= END ? 'again' : 'play'); if (playBtn.dataset.st !== st) { playBtn.dataset.st = st; playBtn.innerHTML = ICON[st]; playBtn.setAttribute('aria-label', { pause: 'Pause', again: 'Replay', play: 'Play' }[st]); } applyTargets();
 }
 /* ---------- whole chain first, then a phase chosen by click ---------- */
 const OV = { az: .3, po: .95 };
@@ -709,58 +709,58 @@ body.ov .ovhint { display: block; }
 @media (prefers-reduced-motion: reduce) { .bar .g { transition: none; } }
 </style>
 
-<aside class="insp mat" aria-label="Dati del twin">
-<div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="1.5 1 13 13" width="22" height="22"><defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd60a"/><stop offset="1" stop-color="#ff6b0a"/></linearGradient></defs><path d="M3 4h10l-1.4 8.2a1.5 1.5 0 0 1-1.5 1.3H5.9a1.5 1.5 0 0 1-1.5-1.3z" fill="url(#mg)"/><path d="M8 1.5v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><div><h1>Forno elettrico ad arco</h1><p>Twin di colata · Dalmine</p></div></div>
-<div class="week" aria-label="Ultime colate">
-  <div><span>MAM media</span><b class="num" id="wM"></b></div>
-  <div><span>Non letto</span><b class="num" id="wL"></b></div>
-  <div><span>Da rivedere</span><b class="num" id="wR"></b></div>
+<aside class="insp mat" aria-label="Twin data">
+<div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="1.5 1 13 13" width="22" height="22"><defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd60a"/><stop offset="1" stop-color="#ff6b0a"/></linearGradient></defs><path d="M3 4h10l-1.4 8.2a1.5 1.5 0 0 1-1.5 1.3H5.9a1.5 1.5 0 0 1-1.5-1.3z" fill="url(#mg)"/><path d="M8 1.5v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><div><h1>Electric arc furnace</h1><p>Heat twin · Dalmine</p></div></div>
+<div class="week" aria-label="Recent heats">
+  <div><span>Avg MAM</span><b class="num" id="wM"></b></div>
+  <div><span>Unweighed</span><b class="num" id="wL"></b></div>
+  <div><span>To review</span><b class="num" id="wR"></b></div>
 </div>
 
 
   <div class="hd"><div><h2 id="cId"></h2><p id="cSub"></p></div><span class="pill" id="cPill"></span></div>
-  <div class="hero"><span class="hl">MAM corretta</span><b class="num" id="cMam"></b><div class="kv"><span>Ufficiale</span><span class="num" id="cOff"></span></div><div class="kv"><span>Differenza</span><span class="num G" id="cDiff"></span></div></div>
+  <div class="hero"><span class="hl">Corrected MAM</span><b class="num" id="cMam"></b><div class="kv"><span>Official</span><span class="num" id="cOff"></span></div><div class="kv"><span>Difference</span><span class="num G" id="cDiff"></span></div></div>
   <div class="bal">
-    <div class="lbl"><span>Liquido letto rispetto all’atteso</span><em class="num" id="cGap"></em></div>
-    <div class="bar"><div class="g" id="bG"></div></div><div class="scale"><span>−1 t</span><span>atteso</span><span>+1 t</span></div>
-    <div class="trio"><div><span>Caricato</span><b class="num" id="cC"></b></div><div><span>Letto</span><b class="num" id="cL"></b></div><div><span>Atteso</span><b class="num" id="cA"></b></div></div>
-    <div class="xrow"><span>Barre pesate <i>verifica</i></span><b class="num" id="cB">—</b></div>
+    <div class="lbl"><span>Ladle reading vs expected</span><em class="num" id="cGap"></em></div>
+    <div class="bar"><div class="g" id="bG"></div></div><div class="scale"><span>−1 t</span><span>expected</span><span>+1 t</span></div>
+    <div class="trio"><div><span>Charged</span><b class="num" id="cC"></b></div><div><span>Ladle</span><b class="num" id="cL"></b></div><div><span>Expected</span><b class="num" id="cA"></b></div></div>
+    <div class="xrow"><span>Bar scale <i>cross-check</i></span><b class="num" id="cB">—</b></div>
   </div>
-  <div class="sec"><h3>MAM per colata</h3><svg class="spark" id="spark" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
-    <div class="leg"><span style="--c:var(--ink3)">ufficiale</span><span style="--c:var(--green)">corretta</span></div></div>
-  <details class="sec fold" open><summary><h3>Ultime colate</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary><div class="list" id="list"></div></details>
-  <details class="sec fold"><summary><h3>Nuova colata dai sensori</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary>
-    <form class="add" id="add"><label>Caricato (kg)<input name="c" type="number" inputmode="numeric" min="1" step="1" required value="100500"></label><label>Letto (kg)<input name="l" type="number" inputmode="numeric" min="1" step="1" required value="91400"></label><label>Barre (kg)<input name="b" type="number" inputmode="numeric" min="1" step="1" required value="89300"></label><button type="submit">Analizza colata</button><p>Dati simulati: nel reale arrivano dai sensori.</p></form></details>
+  <div class="sec"><h3>MAM per heat</h3><svg class="spark" id="spark" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
+    <div class="leg"><span style="--c:var(--ink3)">official</span><span style="--c:var(--green)">corrected</span></div></div>
+  <details class="sec fold" open><summary><h3>Recent heats</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary><div class="list" id="list"></div></details>
+  <details class="sec fold"><summary><h3>New heat from sensors</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary>
+    <form class="add" id="add"><label>Charged (kg)<input name="c" type="number" inputmode="numeric" min="1" step="1" required value="100500"></label><label>Ladle (kg)<input name="l" type="number" inputmode="numeric" min="1" step="1" required value="91400"></label><label>Bars (kg)<input name="b" type="number" inputmode="numeric" min="1" step="1" required value="89300"></label><button type="submit">Analyse heat</button><p>Simulated data: in production these values come from the plant sensors.</p></form></details>
 </aside>
 
-<button class="back mat" type="button" id="back" aria-label="Tutta la catena" title="Tutta la catena"><svg class="ex" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="co" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
-<button class="st mat" type="button" data-id="carica" style="--c:#aab3c2"><i></i>Carica</button>
-<button class="st mat" type="button" data-id="fusione" style="--c:#f59a3a"><i></i>Fusione</button>
-<button class="st mat" type="button" data-id="colata" style="--c:#ff5b2e"><i></i>Colata</button>
-<button class="st mat" type="button" data-id="taglio" style="--c:#5fc9a6"><i></i>Taglio</button>
-<div class="tag mat" id="t3"><span>Bilancia barre</span><b class="num" id="t3v"></b></div>
-<div class="tag mat" id="t1"><span>Parco rottame</span><b class="num" id="t1v"></b></div>
-<div class="tag mat" id="t2"><span>Bilancia di colata</span><b class="num" id="t2v"></b></div>
+<button class="back mat" type="button" id="back" aria-label="Whole line" title="Whole line"><svg class="ex" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="co" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
+<button class="st mat" type="button" data-id="carica" style="--c:#aab3c2"><i></i>Charging</button>
+<button class="st mat" type="button" data-id="fusione" style="--c:#f59a3a"><i></i>Melting</button>
+<button class="st mat" type="button" data-id="colata" style="--c:#ff5b2e"><i></i>Tapping</button>
+<button class="st mat" type="button" data-id="taglio" style="--c:#5fc9a6"><i></i>Cutting</button>
+<div class="tag mat" id="t3"><span>Bar scale</span><b class="num" id="t3v"></b></div>
+<div class="tag mat" id="t1"><span>Scrap yard scale</span><b class="num" id="t1v"></b></div>
+<div class="tag mat" id="t2"><span>Ladle scale</span><b class="num" id="t2v"></b></div>
 
 <script>
 document.querySelector('.title')?.remove(); // the sidebar carries the screen's title
 (() => {
-// dati simulati (kg): caricato, liquido letto dalla bilancia di colata, barre pesate a fine linea
-const CUT = 0.975; // le barre pesano ≈97,5% del liquido colato (perdita di taglio assunta, non un dato Tenaris)
+// simulated data (kg): charged scrap, liquid read by the ladle scale, bars weighed at the end of the line
+const CUT = 0.975; // bars weigh ≈97.5% of the liquid poured (assumed cutting and casting loss, not a Tenaris figure)
 const C = [
-  { id: '24-0407', t: '11 ott · 22:10', c: 100300, l: 91720, b: 89480 },
-  { id: '24-0408', t: '12 ott · 01:05', c: 100600, l: 91170, b: 89160 },
-  { id: '24-0409', t: '12 ott · 04:00', c: 100200, l: 91840, b: 89580 },
-  { id: '24-0410', t: '12 ott · 06:55', c: 100500, l: 91380, b: 89270 },
-  { id: '24-0411', t: '12 ott · 09:50', c: 101100, l: 82890, b: 89500 },
-  { id: '24-0412', t: '12 ott · 12:45', c: 100800, l: 91820, b: 89830 },
-  { id: '24-0413', t: '12 ott · 15:40', c: 100400, l: 91270, b: 89270 }];
+  { id: '24-0407', t: '11 Oct · 22:10', c: 100300, l: 91720, b: 89480 },
+  { id: '24-0408', t: '12 Oct · 01:05', c: 100600, l: 91170, b: 89160 },
+  { id: '24-0409', t: '12 Oct · 04:00', c: 100200, l: 91840, b: 89580 },
+  { id: '24-0410', t: '12 Oct · 06:55', c: 100500, l: 91380, b: 89270 },
+  { id: '24-0411', t: '12 Oct · 09:50', c: 101100, l: 82890, b: 89500 },
+  { id: '24-0412', t: '12 Oct · 12:45', c: 100800, l: 91820, b: 89830 },
+  { id: '24-0413', t: '12 Oct · 15:40', c: 100400, l: 91270, b: 89270 }];
 // the liquid really poured comes from the bar scale (independent of the ladle); MAM and status are derived from the weighings, never typed in: MAM = kg caricati / kg liquido × 1000
 const derive = x => { x.a = Math.round(x.b / CUT / 10) * 10; const g = x.a - x.l; x.g = g; x.m = [Math.round(x.c / x.l * 1000), Math.round(x.c / x.a * 1000)]; x.s = g >= 1000 ? 'emergency' : g >= 200 ? 'tara' : 'ok'; };
 C.forEach(derive);
-const ST = { ok: ['In regola', '#30d158'], tara: ['Tara rilevata', '#ff9f0a'], emergency: ['Emergenza non registrata', '#ff453a'] };
+const ST = { ok: ['In range', '#30d158'], tara: ['Short ladle reading', '#ff9f0a'], emergency: ['Unrecorded emergency cast', '#ff453a'] };
 const $ = id => document.getElementById(id);
-const n = v => v.toLocaleString('it-IT');
+const n = v => v.toLocaleString('en-GB');
 const kg = v => n(v) + ' kg';
 const clamp01 = v => Math.min(1, Math.max(0, v));
 const minus = v => (v < 0 ? '−' : '') + n(Math.abs(v));
@@ -770,9 +770,9 @@ let cur = C.length - 1; // the replay shows the newest colata
 const sum = k => C.reduce((s, x) => s + x[k], 0);
 function week() {
   const offM = Math.round(sum('c') / sum('l') * 1000), corM = Math.round(sum('c') / sum('a') * 1000);
-  $('wM').innerHTML = `${corM}<small>uff. ${offM}</small>`;
-  $('wL').innerHTML = `${(sum('a') - sum('l')) / 1000 > 0 ? ((sum('a') - sum('l')) / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 }) : 0}<small>t</small>`;
-  $('wR').innerHTML = `${C.filter(x => x.s !== 'ok').length}<small>su ${C.length}</small>`;
+  $('wM').innerHTML = `${corM}<small>off. ${offM}</small>`;
+  $('wL').innerHTML = `${(sum('a') - sum('l')) / 1000 > 0 ? ((sum('a') - sum('l')) / 1000).toLocaleString('en-GB', { maximumFractionDigits: 1 }) : 0}<small>t</small>`;
+  $('wR').innerHTML = `${C.filter(x => x.s !== 'ok').length}<small>of ${C.length}</small>`;
 }
 week();
 
@@ -800,9 +800,9 @@ function spark() {
 
 function render() {
   const d = C[cur];
-  $('cId').textContent = 'Colata ' + d.id; $('cSub').textContent = `C45 · ${d.t}`;
+  $('cId').textContent = 'Heat ' + d.id; $('cSub').textContent = `C45 · ${d.t}`;
   $('list').innerHTML = C.slice(-5).reverse().map(x => { const i = C.indexOf(x), g = x.l - x.a;
-    return `<div class="row" style="--c:${ST[x.s][1]}"><div class="pick" aria-current="${i === cur}"><i></i><span>${x.id}<small>${{ ok: 'In regola', tara: 'Tara', emergency: 'Emergenza' }[x.s]}</small></span><span class="gap num ${x.s !== 'ok' ? 'hot' : ''}">${minus(g)} kg</span></div><button type="button" class="rp" data-r="${i}" aria-label="Rivedi la colata ${x.id}" title="Rivedi la colata"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg></button></div>`; }).join('');
+    return `<div class="row" style="--c:${ST[x.s][1]}"><div class="pick" aria-current="${i === cur}"><i></i><span>${x.id}<small>${{ ok: 'In range', tara: 'Low read', emergency: 'Emergency' }[x.s]}</small></span><span class="gap num ${x.s !== 'ok' ? 'hot' : ''}">${minus(g)} kg</span></div><button type="button" class="rp" data-r="${i}" aria-label="Replay heat ${x.id}" title="Replay heat"><svg viewBox="0 0 16 16" width="12" height="12"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg></button></div>`; }).join('');
   spark(); lastDone = null;
 }
 // the selected colata fills in as the replay goes: weighed charge, expected liquid, ladle reading, then the verdict
@@ -818,13 +818,13 @@ function live(t, yard, fill) {
     p.textContent = st[0]; p.style.setProperty('--c', st[1]); bal.style.setProperty('--c', st[1]);
     tween(d.m[1]);
     $('cOff').textContent = d.m[0]; $('cDiff').textContent = d.m[0] === d.m[1] ? '0' : `−${d.m[0] - d.m[1]}`;
-    $('cGap').textContent = gap === 0 ? 'in pari' : minus(gap) + ' kg';
+    $('cGap').textContent = gap === 0 ? 'on target' : minus(gap) + ' kg';
     const w = Math.min(1, Math.abs(gap) / 1000) * 50; // deviation meter centred on the expected liquid, ±1 t full scale
     $('bG').style.left = (gap < 0 ? 50 - w : 50) + '%'; $('bG').style.width = Math.max(w, .8) + '%';
   } else {
-    p.textContent = 'In corso'; p.style.setProperty('--c', 'var(--ink2)');
+    p.textContent = 'In progress'; p.style.setProperty('--c', 'var(--ink2)');
     cancelAnimationFrame(raf); shown = null; $('cMam').innerHTML = '<span style="opacity:.14">0000</span>'; $('cOff').textContent = '—'; $('cDiff').textContent = '—';
-    $('cGap').textContent = 'in attesa'; bal.style.setProperty('--c', 'var(--ink2)');
+    $('cGap').textContent = 'pending'; bal.style.setProperty('--c', 'var(--ink2)');
     $('bG').style.left = '50%'; $('bG').style.width = '0%';
   }
 }
@@ -837,7 +837,7 @@ $('add').addEventListener('submit', e => {
   const c = v('c'), l = v('l'), b = v('b');
   if (![c, l, b].every(x => x > 0)) return;
   const last = C[C.length - 1], num = +last.id.split('-')[1] + 1;
-  const x = { id: '24-' + String(num).padStart(4, '0'), t: 'adesso · sensori', c, l, b }; derive(x); C.push(x);
+  const x = { id: '24-' + String(num).padStart(4, '0'), t: 'now · sensors', c, l, b }; derive(x); C.push(x);
   cur = C.length - 1; week(); render(); window.__twin.goPhase('carica');
 });
 render();
@@ -851,7 +851,7 @@ const pj = (x, y, z, el) => { const r = R, v = new THREE.Vector3(x, y, z).projec
 const show = (el, on) => { el.style.setProperty('--o', on ? 1 : 0); el.style.setProperty('--k', on ? 1 : .9); };
 const SPOT = { carica: [-11.5, .2, 3.6], fusione: [0, .2, 5], colata: [7.7, .2, 3.8], taglio: [34, .2, 3.4] }; // pills sit on the floor in front of each station, under the scale readings
 document.querySelectorAll('.st').forEach(b => b.addEventListener('click', () => window.__twin.goPhase(b.dataset.id)));
-$('back').addEventListener('click', () => { const T = window.__twin; if (T.overview) { T.leaveOverview(); $('back').title = 'Tutta la catena'; } else { T.goOverview(); $('back').title = 'Torna alla fase'; } });
+$('back').addEventListener('click', () => { const T = window.__twin; if (T.overview) { T.leaveOverview(); $('back').title = 'Whole line'; } else { T.goOverview(); $('back').title = 'Back to phase'; } });
 (function tick() {
   const T = window.__twin;
   if (window.__cam && T) {
@@ -868,7 +868,7 @@ $('back').addEventListener('click', () => { const T = window.__twin; if (T.overv
     const doneAll = t >= 72.5, stuck = doneAll && d.a > d.l + 5; // the verdict waits for the bar scale
     $('t2').style.setProperty('--tc', stuck ? (d.s === 'emergency' ? '#ff453a' : '#ff9f0a') : 'transparent'); $('t2').classList.toggle('stuck', stuck);
     show($('t2'), tap);
-    $('t2v').textContent = doneAll ? `${n(d.l)} letti · ${n(d.a)} attesi` : kg(Math.min(d.l, Math.round(d.a*fill/10)*10));
+    $('t2v').textContent = doneAll ? `${n(d.l)} read · ${n(d.a)} expected` : kg(Math.min(d.l, Math.round(d.a*fill/10)*10));
     // bar scale at the end of the caster
     // the bar scale keeps its total after the crane has taken the bars away
     if (t < 55) maxW = 0; maxW = t >= 72.5 ? 1 : Math.max(maxW, T.weighed);
