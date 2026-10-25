@@ -647,6 +647,15 @@ window.__ready = true;
 .list small { color: var(--ink2); font-size: 12px; margin-left: 6px; }
 .list .gap { color: var(--ink2); }
 .list .gap.hot { color: var(--c); }
+.add { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+.add label { display: block; font-size: 11px; color: var(--ink2); }
+.add input { box-sizing: border-box; width: 100%; margin-top: 3px; padding: 7px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: var(--fg); font: 500 13px/1 inherit; font-family: inherit; }
+.add input:focus-visible { outline: 1px solid var(--accent); }
+.add button { grid-column: 1 / -1; all: unset; box-sizing: border-box; text-align: center; padding: 8px; border-radius: 10px; background: rgba(255,255,255,.1); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 120ms, transform 100ms; }
+.add button:hover { background: rgba(255,255,255,.16); }
+.add button:active { transform: scale(.98); }
+.add button:focus-visible { outline: 1px solid var(--accent); }
+.add p { grid-column: 1 / -1; margin: 0; font-size: 11px; color: var(--ink3); }
 .spark { width: 100%; height: 64px; display: block; overflow: visible; }
 .leg { display: flex; gap: 14px; color: var(--ink2); font-size: 12px; margin-top: 6px; }
 .leg span::before { content: ""; display: inline-block; width: 10px; height: 2px; border-radius: 1px; background: var(--c); vertical-align: 3px; margin-right: 6px; }
@@ -709,6 +718,8 @@ body.ov .ovhint { display: block; }
   <div class="sec"><h3>MAM per colata</h3><svg class="spark" id="spark" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
     <div class="leg"><span style="--c:var(--ink3)">ufficiale</span><span style="--c:var(--green)">corretta</span></div></div>
   <details class="sec fold" open><summary><h3>Ultime colate</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary><div class="list" id="list"></div></details>
+  <details class="sec fold"><summary><h3>Nuova colata dai sensori</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary>
+    <form class="add" id="add"><label>Caricato (kg)<input name="c" type="number" inputmode="numeric" min="1" step="10" required value="100500"></label><label>Letto (kg)<input name="l" type="number" inputmode="numeric" min="1" step="10" required value="91400"></label><label>Barre (kg)<input name="b" type="number" inputmode="numeric" min="1" step="10" required value="89300"></label><button type="submit">Analizza colata</button><p>Dati simulati: nel reale arrivano dai sensori.</p></form></details>
 </aside>
 
 <button class="back mat" type="button" id="back" aria-label="Tutta la catena" title="Tutta la catena"><svg class="ex" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="co" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
@@ -723,17 +734,19 @@ body.ov .ovhint { display: block; }
 <script>
 document.querySelector('.title')?.remove(); // the sidebar carries the screen's title
 (() => {
-// dati simulati: kg caricati, kg liquido letto, kg liquido atteso, MAM ufficiale / corretta
+// dati simulati (kg): caricato, liquido letto dalla bilancia di colata, barre pesate a fine linea
+const CUT = 0.975; // le barre pesano ≈97,5% del liquido colato (perdita di taglio assunta, non un dato Tenaris)
 const C = [
-  { id: '24-0407', t: '11 ott · 22:10', c: 100300, l: 91900, a: 91950, m: [1091, 1091], s: 'ok' },
-  { id: '24-0408', t: '12 ott · 01:05', c: 100600, l: 91880, a: 92160, m: [1095, 1092], s: 'tara' },
-  { id: '24-0409', t: '12 ott · 04:00', c: 100200, l: 91650, a: 91690, m: [1093, 1093], s: 'ok' },
-  { id: '24-0410', t: '12 ott · 06:55', c: 100500, l: 91720, a: 91900, m: [1096, 1094], s: 'ok' },
-  { id: '24-0411', t: '12 ott · 09:50', c: 101100, l: 83100, a: 92000, m: [1217, 1099], s: 'emergency' },
-  { id: '24-0412', t: '12 ott · 12:45', c: 100800, l: 92170, a: 92480, m: [1094, 1090], s: 'tara' },
-  { id: '24-0413', t: '12 ott · 15:40', c: 100400, l: 91560, a: 91850, m: [1096, 1093], s: 'tara' }];
-// MAM and status are derived from the three weighings, never typed in: MAM = kg caricati / kg liquido × 1000
-C.forEach(x => { x.m = [Math.round(x.c / x.l * 1000), Math.round(x.c / x.a * 1000)]; const g = x.a - x.l; x.s = g >= 1000 ? 'emergency' : g >= 200 ? 'tara' : 'ok'; });
+  { id: '24-0407', t: '11 ott · 22:10', c: 100300, l: 91720, b: 89480 },
+  { id: '24-0408', t: '12 ott · 01:05', c: 100600, l: 91170, b: 89160 },
+  { id: '24-0409', t: '12 ott · 04:00', c: 100200, l: 91840, b: 89580 },
+  { id: '24-0410', t: '12 ott · 06:55', c: 100500, l: 91380, b: 89270 },
+  { id: '24-0411', t: '12 ott · 09:50', c: 101100, l: 82890, b: 89500 },
+  { id: '24-0412', t: '12 ott · 12:45', c: 100800, l: 91820, b: 89830 },
+  { id: '24-0413', t: '12 ott · 15:40', c: 100400, l: 91270, b: 89270 }];
+// the liquid really poured comes from the bar scale (independent of the ladle); MAM and status are derived from the weighings, never typed in: MAM = kg caricati / kg liquido × 1000
+const derive = x => { x.a = Math.round(x.b / CUT / 10) * 10; const g = x.a - x.l; x.g = g; x.m = [Math.round(x.c / x.l * 1000), Math.round(x.c / x.a * 1000)]; x.s = g >= 1000 ? 'emergency' : g >= 200 ? 'tara' : 'ok'; };
+C.forEach(derive);
 const ST = { ok: ['In regola', '#30d158'], tara: ['Tara rilevata', '#ff9f0a'], emergency: ['Emergenza non registrata', '#ff453a'] };
 const $ = id => document.getElementById(id);
 const n = v => v.toLocaleString('it-IT');
@@ -744,10 +757,13 @@ let cur = C.length - 1; // the replay shows the newest colata
 
 // week
 const sum = k => C.reduce((s, x) => s + x[k], 0);
-const offM = Math.round(sum('c') / sum('l') * 1000), corM = Math.round(sum('c') / sum('a') * 1000);
-$('wM').innerHTML = `${corM}<small>uff. ${offM}</small>`;
-$('wL').innerHTML = `${(sum('a') - sum('l')) / 1000 > 0 ? ((sum('a') - sum('l')) / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 }) : 0}<small>t</small>`;
-$('wR').innerHTML = `${C.filter(x => x.s !== 'ok').length}<small>su ${C.length}</small>`;
+function week() {
+  const offM = Math.round(sum('c') / sum('l') * 1000), corM = Math.round(sum('c') / sum('a') * 1000);
+  $('wM').innerHTML = `${corM}<small>uff. ${offM}</small>`;
+  $('wL').innerHTML = `${(sum('a') - sum('l')) / 1000 > 0 ? ((sum('a') - sum('l')) / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 }) : 0}<small>t</small>`;
+  $('wR').innerHTML = `${C.filter(x => x.s !== 'ok').length}<small>su ${C.length}</small>`;
+}
+week();
 
 // count-up for the hero number, starting from the value on screen
 let shown = null, raf = 0;
@@ -805,6 +821,14 @@ $('list').addEventListener('click', e => {
   const r = e.target.closest('button[data-r]');
   if (r) { cur = +r.dataset.r; render(); window.__twin.goPhase('carica'); return; } // replay that colata from the start
 });
+$('add').addEventListener('submit', e => {
+  e.preventDefault(); const f = new FormData(e.target), v = k => Math.round(+f.get(k));
+  const c = v('c'), l = v('l'), b = v('b');
+  if (![c, l, b].every(x => x > 0)) return;
+  const last = C[C.length - 1], num = +last.id.split('-')[1] + 1;
+  const x = { id: '24-' + String(num).padStart(4, '0'), t: 'adesso · sensori', c, l, b }; derive(x); C.push(x);
+  cur = C.length - 1; week(); render(); window.__twin.goPhase('carica');
+});
 render();
 
 function offset() { const c = window.__cam; if (!c) return; const w = innerWidth, h = innerHeight, k = w > 860 ? ($('stage').querySelector('canvas') && document.querySelector('.insp').offsetWidth + 32)/2 : 0; c.clearViewOffset(); }
@@ -838,7 +862,7 @@ $('back').addEventListener('click', () => { const T = window.__twin; if (T.overv
     // the bar scale keeps its total after the crane has taken the bars away
     if (t < 55) maxW = 0; maxW = t >= 72.5 ? 1 : Math.max(maxW, T.weighed);
     show($('t3'), maxW > .02);
-    $('t3v').textContent = $('cB').textContent = maxW > .02 ? kg(Math.round(d.a*.975*maxW/10)*10) : '—'; // bars weigh what was really poured (≈97,5% of the liquid), the cross-check on the ladle reading
+    $('t3v').textContent = $('cB').textContent = maxW > .02 ? kg(Math.round(d.b*maxW/10)*10) : '—'; // bars weigh what was really poured (≈97,5% of the liquid), the cross-check on the ladle reading
     pj(-11.5, 4.2, 0, $('t1')); pj(7.7, 5.2, 0, $('t2')); pj(39.5, 3.6, 0, $('t3'));
     if (T.overview) document.querySelectorAll('.st').forEach(b => pj(...SPOT[b.dataset.id], b));
   }
