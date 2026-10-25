@@ -797,9 +797,9 @@ function render() {
 // the selected colata fills in as the replay goes: weighed charge, expected liquid, ladle reading, then the verdict
 let lastDone = null;
 function live(t, yard, fill) {
-  const d = C[cur], st = ST[d.s], gap = d.l - d.a, done = t >= 54.9, tapping = t >= 47.2;
+  const d = C[cur], st = ST[d.s], gap = d.l - d.a, done = t >= 72.5, tapping = t >= 47.2;
   $('cC').textContent = t > .35 ? kg(Math.round(d.c*yard/10)*10) : '—';
-  $('cA').textContent = t >= 7 ? kg(d.a) : '—';
+  $('cA').textContent = done ? kg(d.a) : '—'; // the expected liquid comes from the bars, so it exists only once the bar scale has finished
   $('cL').textContent = tapping ? kg(done ? d.l : Math.min(d.l, Math.round(d.a*fill/10)*10)) : '—';
   if (done === lastDone) return; lastDone = done;
   const p = $('cPill'), bal = document.querySelector('.bal');
@@ -854,10 +854,10 @@ $('back').addEventListener('click', () => { const T = window.__twin; if (T.overv
     const tap = t >= 47.2, fill = t < 55 ? T.lf : 1;
     // what the scale actually registered for this colata: it stops reading at d.l
     T.cap = d.l / d.a; T.warn = T.warn || new THREE.Color(); T.warn.set(d.s === 'emergency' ? '#ff453a' : '#ff9f0a').multiplyScalar(1.6);
-    const stuck = tap && d.a*fill > d.l + 5;
+    const doneAll = t >= 72.5, stuck = doneAll && d.a > d.l + 5; // the verdict waits for the bar scale
     $('t2').style.setProperty('--tc', stuck ? (d.s === 'emergency' ? '#ff453a' : '#ff9f0a') : 'transparent'); $('t2').classList.toggle('stuck', stuck);
     show($('t2'), tap);
-    $('t2v').textContent = fill > .99 ? `${n(d.l)} letti · ${n(d.a)} attesi` : stuck ? `${n(d.l)} kg · lettura ferma` : kg(Math.round(d.a*fill/10)*10);
+    $('t2v').textContent = doneAll ? `${n(d.l)} letti · ${n(d.a)} attesi` : kg(Math.min(d.l, Math.round(d.a*fill/10)*10));
     // bar scale at the end of the caster
     // the bar scale keeps its total after the crane has taken the bars away
     if (t < 55) maxW = 0; maxW = t >= 72.5 ? 1 : Math.max(maxW, T.weighed);
