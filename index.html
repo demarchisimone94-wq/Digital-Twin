@@ -618,7 +618,7 @@ window.__ready = true;
 </script>
 <style>
 :root { --ip: 284px; --glass: rgba(24,24,28,.58); --glass-hi: rgba(255,255,255,.07); --ink2: rgba(235,235,245,.6); --ink3: rgba(235,235,245,.32); --green: #30d158; --orange: #ff9f0a; --red: #ff453a; }
-.dock { left: calc(var(--ip) + (100% - var(--ip)) / 2); width: min(560px, calc(100% - var(--ip) - 80px)); }
+.dock { left: calc(var(--ip) + (100% - var(--ip) - 180px) / 2); width: min(560px, calc(100% - var(--ip) - 180px - 48px)); } /* centred in the space left free by the sidebar and the mode switch, never touching either */
 .title { display: none; }
 #stage { left: 0; }
 .insp.mat { left: 0; top: 0; bottom: 0; max-height: none; border-radius: 0; border: 0; border-right: 1px solid rgba(255,255,255,.07); background: #121216; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; padding: 20px 16px; }
