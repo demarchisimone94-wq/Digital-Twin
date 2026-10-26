@@ -377,6 +377,7 @@ let t = FROZEN ? window.__static : 0, overview = window.__overview ?? !FROZEN, p
 const TW = window.__twin = { t: 0, lf: 0, weighed: 0, overview };
 const S = { roof: new Spring(1.7, .55, 1), roofLift: new Spring(1, .55, 1), tilt: new Spring(0, .55, 1), eY: [0, 1, 2].map(() => new Spring(14, .6, 1)), bx: new Spring(-17, .65, 1), by: new Spring(17, .65, 1), br: new Spring(0, .5, .85), car: new Spring(0, 1.1, 1), cx: new Spring(1.6, .9, 1), cr: new Spring(0, .9, 1) };
 if (FROZEN) {}
+let planMode = false, planSave = null; // mix planner: camera closes in on the furnace and the replay is held
 const worldTip = new THREE.Vector3(), vB = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
 let M = model(t);
 function applyTargets() {
@@ -450,7 +451,7 @@ function frame(dt) {
   TW.t = t; TW.lf = lf; TW.weighed = weighed/NB; TW.overview = overview;
   const bw = Math.max(.001, weighed/NB); bBar.scale.x = bw; bBar.position.x = -.33*(1 - bw);
   // camera follows the ladle to the caster
-  if (overview) { S.cx.t = 16.5; S.cr.t = 46; } else { S.cx.t = { carica: -5, fusione: 0, colata: 4, taglio: 29 }[M.phase.id]; S.cr.t = M.phase.id === 'taglio' ? 27 : M.phase.id === 'carica' ? 6 : 0; } // each phase framed inside the free area, nothing cut by the stats column
+  if (planMode) { S.cx.t = 0; S.cr.t = 0; } else if (overview) { S.cx.t = 16.5; S.cr.t = 46; } else { S.cx.t = { carica: -5, fusione: 0, colata: 4, taglio: 29 }[M.phase.id]; S.cr.t = M.phase.id === 'taglio' ? 27 : M.phase.id === 'carica' ? 6 : 0; } // each phase framed inside the free area, nothing cut by the stats column
   const onYard = Math.abs(hook.position.x - YARD_X) < .3 && hook.position.y < 4.1 ? 1 : 0;
   yardW = clamp(yardW + (onYard - yardW)*clamp(dt*3)); const yw = Math.max(.001, yardW); yardBar.scale.x = yw; yardBar.position.x = -.33*(1 - yw); yardG.position.y = -.03*yardW; // platform settles slightly under load
   // glow lights
@@ -504,7 +505,7 @@ stage.addEventListener('pointermove', e => {
   hist.push({ t: performance.now(), a: raw.a, p: raw.p }); if (hist.length > 6) hist.shift();
 });
 function release(e) {
-  if (overview && down0 && Math.hypot(e.clientX - down0.x, e.clientY - down0.y) < 6) pickStation(e);
+  if (down0 && Math.hypot(e.clientX - down0.x, e.clientY - down0.y) < 6) { if (!planMode && onFurnace(e)) goPlan(); else if (overview) pickStation(e); }
   pointers.delete(e.pointerId); if (pointers.size) return; stage.classList.remove('grabbing'); drag = null;
   if (hist.length > 1) { const f0 = hist[0], l = hist.at(-1), d = (l.t - f0.t)/1000; if (d > 0 && performance.now() - l.t < 80) { vel.a = (l.a - f0.a)/d; vel.p = (l.p - f0.p)/d; } }
   if (reduce) vel = { a: 0, p: 0 };
@@ -569,8 +570,31 @@ function pickStation(e) {
   if (!ray.ray.intersectPlane(ground, hit)) return;
   goPhase(hit.x < -5.5 ? 'carica' : hit.x < 5 ? 'fusione' : hit.x < 19 ? 'colata' : 'taglio');
 }
+const furnaceBall = new THREE.Sphere(new THREE.Vector3(0, 2.6, 0), 3.9);
+function onFurnace(e) {
+  const r = stage.getBoundingClientRect();
+  ray.setFromCamera({ x: (e.clientX - r.left)/r.width*2 - 1, y: -(e.clientY - r.top)/r.height*2 + 1 }, camera);
+  return ray.ray.intersectsSphere(furnaceBall);
+}
+function goPlan() {
+  if (planMode) return; planSave = { t, playing, overview }; planMode = true; resetPan(); overview = false;
+  document.body.classList.remove('ov'); document.body.classList.add('plan');
+  t = 6.9; playing = false; auto = false; hold = 0; az.t = .5; po.t = 1.0; rad.t = 22; sync(); // end of charging: pile in, roof open
+}
+function leavePlan() {
+  if (!planMode) return; planMode = false; document.body.classList.remove('plan'); const s0 = planSave;
+  t = s0.t; playing = s0.playing; overview = s0.overview; document.body.classList.toggle('ov', overview);
+  az.t = overview ? OV.az : HOME.az; po.t = overview ? OV.po : HOME.po; rad.t = HOME.r; sync();
+}
+const fhint = document.createElement('div'); fhint.className = 'fhint'; fhint.textContent = 'Plan the charge mix'; document.body.appendChild(fhint);
+stage.addEventListener('pointermove', e => {
+  if (planMode || e.buttons) { fhint.style.opacity = 0; return; }
+  const on = onFurnace(e); stage.style.cursor = on ? 'pointer' : ''; fhint.style.opacity = on ? 1 : 0; fhint.style.left = (e.clientX + 16) + 'px'; fhint.style.top = (e.clientY + 16) + 'px';
+});
+stage.addEventListener('pointerleave', () => { fhint.style.opacity = 0; });
+addEventListener('keydown', e => { if (e.key === 'Escape') leavePlan(); });
 function leaveOverview() { overview = false; document.body.classList.remove('ov'); az.t = HOME.az; po.t = HOME.po; rad.t = HOME.r; sync(); } // back to the running phase, replay untouched
-Object.assign(TW, { goPhase, goOverview, leaveOverview });
+Object.assign(TW, { goPhase, goOverview, leaveOverview, goPlan, leavePlan });
 if (overview) { document.body.classList.add('ov'); az.set(OV.az); po.set(OV.po); S.cx.set(16.5); S.cr.set(46); } // open already framed on the whole chain
 if (reduce) document.getElementById('hint').textContent = 'Animazioni ridotte: usa la barra in basso.';
 let last = performance.now(); sync();
@@ -699,6 +723,61 @@ body.ov .ovhint { display: block; }
 .tag span { display: block; color: var(--ink2); font-size: 11px; font-weight: 500; }
 .tag b { font-weight: 600; }
 
+
+/* mix planner: click the furnace, the camera closes in, inputs on the left, prediction on the right */
+body.plan { --ip: 380px; }
+.insp.mat { transition: width .55s cubic-bezier(.2,.8,.2,1); }
+#stage { transition: left .55s cubic-bezier(.2,.8,.2,1), right .55s cubic-bezier(.2,.8,.2,1); }
+body.plan #stage { right: 340px; }
+body.plan .dock, body.plan .tag, body.plan .st, body.plan .ovhint, body.plan .back, body.plan .hint { display: none !important; }
+.fhint { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .15s; padding: 6px 11px; border-radius: 99px; font-size: 12px; font-weight: 600; background: #1c1c21; border: 1px solid rgba(255,255,255,.12); color: var(--fg); }
+section.plan { display: none; }
+body.plan .insp > :not(.brand):not(.plan) { display: none; }
+body.plan section.plan { display: flex; flex-direction: column; gap: 12px; }
+.pback { all: unset; cursor: pointer; font-size: 12px; color: var(--ink2); padding: 2px 0; }
+.pback:hover { color: var(--fg); }
+.pback:focus-visible { outline: 1px solid var(--accent); }
+.plan h2 { font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
+.plan .sub { color: var(--ink2); font-size: 12px; margin-top: -8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { all: unset; cursor: pointer; padding: 6px 10px; border-radius: 99px; font-size: 12px; background: rgba(255,255,255,.07); transition: background 120ms, transform 100ms; }
+.chip:hover { background: rgba(255,255,255,.12); }
+.chip:active { transform: scale(.96); }
+.chip[aria-pressed="true"] { background: var(--fg); color: #111; font-weight: 600; }
+.chip:focus-visible { outline: 1px solid var(--accent); }
+.chipnote { color: var(--ink3); font-size: 11px; min-height: 14px; margin-top: -6px; }
+.mats { display: flex; flex-direction: column; }
+.mat-row { display: grid; grid-template-columns: 1fr 52px 64px; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid rgba(255,255,255,.06); font-size: 13px; position: relative; }
+.mat-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mat-row .pr { color: var(--ink3); font-size: 11px; text-align: right; }
+.mat-row input { box-sizing: border-box; width: 100%; padding: 5px 6px; border-radius: 7px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: var(--fg); font: 500 13px/1 inherit; font-family: inherit; text-align: right; }
+.mat-row input:focus-visible { outline: 1px solid var(--accent); }
+.mat-row .sh { position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--c, var(--green)); opacity: .7; transition: width .3s; }
+.ptot { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--ink2); }
+.ptot b { color: var(--fg); }
+.ptot b.bad { color: var(--orange); }
+.pbtn { all: unset; box-sizing: border-box; cursor: pointer; text-align: center; padding: 9px; border-radius: 10px; background: rgba(255,255,255,.1); font-size: 13px; font-weight: 600; transition: background 120ms, transform 100ms; }
+.pbtn:hover { background: rgba(255,255,255,.16); }
+.pbtn:active { transform: scale(.98); }
+.pbtn:focus-visible { outline: 1px solid var(--accent); }
+.pbtn.sm { padding: 5px 9px; font-size: 12px; }
+.plan .note, .pout .note { color: var(--ink3); font-size: 11px; line-height: 1.45; }
+.pout { position: fixed; right: 0; top: 0; bottom: 0; width: 340px; box-sizing: border-box; padding: 20px 16px; overflow: auto; background: #121216; border-left: 1px solid rgba(255,255,255,.07); transform: translateX(100%); transition: transform .55s cubic-bezier(.2,.8,.2,1); z-index: 20; display: flex; flex-direction: column; gap: 16px; scrollbar-width: none; }
+body.plan .pout { transform: none; }
+.pout h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.pout .kk { color: var(--ink2); font-size: 12px; }
+.pverd { align-self: flex-start; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
+.pbig b { display: block; font-size: 48px; font-weight: 600; letter-spacing: -.035em; line-height: 1.1; color: var(--c, var(--green)); }
+.pbig small { color: var(--ink2); font-size: 12px; }
+.prow { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-top: 1px solid rgba(255,255,255,.08); font-size: 13px; color: var(--ink2); }
+.prow b { color: var(--fg); font-weight: 600; }
+.prow b.g { color: var(--green); } .prow b.o { color: var(--orange); }
+.bars { display: flex; flex-direction: column; gap: 7px; }
+.bar2 { display: grid; grid-template-columns: 74px 1fr 46px; align-items: center; gap: 8px; font-size: 12px; color: var(--ink2); }
+.bar2 i { display: block; height: 8px; border-radius: 4px; background: rgba(235,235,245,.28); transition: width .35s cubic-bezier(.2,.8,.2,1); }
+.bar2.me { color: var(--fg); } .bar2.me i { background: var(--green); }
+.bar2 b { text-align: right; font-weight: 500; color: var(--fg); }
+
 @media (max-width: 860px) {
   :root { --ip: 0px; }
   #stage { left: 0; bottom: 45%; }
@@ -733,8 +812,32 @@ body.ov .ovhint { display: block; }
   <details class="sec fold" open><summary><h3>Recent heats</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary><div class="list" id="list"></div></details>
   <details class="sec fold"><summary><h3>New heat from sensors</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary>
     <form class="add" id="add"><label>Charged (kg)<input name="c" type="number" inputmode="numeric" min="1" step="1" required value="100500"></label><label>Ladle (kg)<input name="l" type="number" inputmode="numeric" min="1" step="1" required value="91400"></label><label>Bars (kg)<input name="b" type="number" inputmode="numeric" min="1" step="1" required value="89300"></label><button type="submit">Analyse heat</button><p>Simulated data: in production these values come from the plant sensors.</p></form></details>
+  <section class="plan" id="plan">
+    <button class="pback" type="button" id="pBack">← Back to heat monitor</button>
+    <h2>Charge mix</h2>
+    <p class="sub">Pick a preset or set the % of each material.</p>
+    <div class="chips" id="pChips"></div>
+    <div class="chipnote" id="pChipNote"></div>
+    <div class="mats" id="pMats"></div>
+    <div class="ptot"><span>Total</span><span><b id="pTot"></b> <button class="pbtn sm" type="button" id="pNorm">Normalise</button></span></div>
+    <button class="pbtn" type="button" id="pSug">Suggest cheapest mix</button>
+    <p class="note" id="pSugNote"></p>
+    <p class="note">Material names are estimates: the source sheet was partly cropped. Prices are the standard €/t from the sheet.</p>
+  </section>
 </aside>
 
+
+<aside class="pout" id="pout" aria-label="Prediction">
+  <span class="pverd" id="pVerd"></span>
+  <div class="pbig"><span class="kk">Predicted MAM</span><b class="num" id="pMam"></b><small id="pMamD"></small></div>
+  <div>
+    <div class="prow"><span>Cost per t of charge</span><b class="num" id="pC"></b></div>
+    <div class="prow"><span>Cost per t of liquid steel</span><b class="num" id="pT"></b></div>
+    <div class="prow"><span>vs last week's mix</span><b class="num" id="pD"></b></div>
+  </div>
+  <div><h3>Cost per t of liquid steel, by mix</h3><div class="bars" id="pBars"></div></div>
+  <p class="note">Prediction, not measurement. Each material's yield is fitted to the six MAM values of the sheet, so it is reliable for mixes close to those and gets weaker the further you move away.</p>
+</aside>
 <button class="back mat" type="button" id="back" aria-label="Whole line" title="Whole line"><svg class="ex" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="co" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
 <button class="st mat" type="button" data-id="carica" style="--c:#aab3c2"><i></i>Charging</button>
 <button class="st mat" type="button" data-id="fusione" style="--c:#f59a3a"><i></i>Melting</button>
@@ -882,5 +985,60 @@ $('back').addEventListener('click', () => { const T = window.__twin; if (T.overv
   }
   requestAnimationFrame(tick);
 })();
+})();
+</script>
+
+<script>
+(() => {
+const MATS = [{"n": "Plant returns", "p": 0.0}, {"n": "Premium scrap", "p": 350.89}, {"n": "Heavy melting scrap", "p": 321.43}, {"n": "Tube-mill cuts", "p": 37.1}, {"n": "Shovelable scrap", "p": 341.07}, {"n": "Scrap under analysis", "p": 313.39}, {"n": "Shredded scrap", "p": 340.18}, {"n": "Demolition scrap", "p": 306.25}, {"n": "Industrial ferrous scrap", "p": 320.54}, {"n": "Steel turnings", "p": 289.29}, {"n": "Scrap fines", "p": 0.01}, {"n": "Cast-iron scrap", "p": 338.39}, {"n": "Pig iron remelt", "p": 304.46}, {"n": "Pig iron ingots", "p": 437.5}, {"n": "New cut-offs (NPF)", "p": 309.82}, {"n": "Industrial sheet (NPF)", "p": 333.04}, {"n": "Recycled scrap", "p": 319.62}, {"n": "Skulls & tundish", "p": 319.62}];
+const YF = [1.08696, 1.08015, 1.11532, 1.08884, 1.03405, 1.07614, 1.11904, 1.07046, 1.11391, 1.12256, 1.08696, 1.10172, 1.04349, 1.07982, 1.05071, 1.11521, 1.06658, 1.12157]; // charge needed per unit of liquid, per material: min-norm fit to the six sheet MAMs
+const PRE = [{"n": "Standard", "s": "code 100 \u00b7 28% of heats", "x": [0, 1.0, 16.1, 0.7, 20.4, 0.2, 5.1, 12.2, 0.6, 19.8, 0.0, 3.1, 4.0, 0.0, 3.1, 4.4, 8.2, 1.0]}, {"n": "Mix 225", "s": "code 200 \u00b7 19% of heats", "x": [0, 0.0, 12.8, 0.7, 16.4, 0.8, 4.2, 8.6, 0.6, 20.0, 0.0, 3.2, 4.0, 0.0, 3.5, 4.0, 19.9, 1.2]}, {"n": "Mix 139", "s": "code 400 \u00b7 44% of heats", "x": [0, 3.1, 15.6, 0.7, 27.0, 0.2, 1.8, 10.6, 0.6, 12.7, 0.0, 2.4, 3.5, 1.5, 4.0, 10.5, 4.8, 1.0]}, {"n": "Mo 8\u201310", "s": "code 300 \u00b7 9% of heats", "x": [0, 5.0, 18.6, 0.7, 31.8, 0.0, 0.1, 0.1, 0.3, 0.0, 0.0, 4.0, 0.0, 2.8, 4.9, 21.8, 9.7, 0.1]}, {"n": "Model", "s": "automatic mix", "x": [0.0, 2.1, 15.5, 0.7, 23.6, 0.3, 3.0, 9.7, 0.6, 14.9, 0.0, 2.9, 3.4, 0.9, 3.7, 8.6, 9.1, 1.0]}, {"n": "Last week", "s": "real charge", "x": [0, 1.6, 14.2, 0.6, 23.7, 1.0, 1.9, 10.8, 0.0, 15.6, 0.0, 2.5, 5.4, 0.3, 4.2, 4.8, 12.9, 0.5]}];
+const $ = id => document.getElementById(id), n1 = v => v.toLocaleString('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const sum = x => x.reduce((a, b) => a + b, 0);
+const calc = x => { const s = sum(x) || 1; let c = 0, y = 0; x.forEach((v, i) => { c += MATS[i].p*v/s; y += YF[i]*v/s; }); return { c, mam: y*1000, t: c*y }; };
+const REAL = PRE[5], real = calc(REAL.x);
+let x = REAL.x.slice();
+$('pMats').innerHTML = MATS.map((m, i) => `<label class="mat-row"><span class="nm" title="${m.n}">${m.n}</span><span class="pr num">€${n1(m.p)}</span><input type="number" inputmode="decimal" min="0" max="100" step="0.1" data-i="${i}" aria-label="${m.n} %"><i class="sh"></i></label>`).join('');
+$('pChips').innerHTML = PRE.map((p, i) => `<button class="chip" type="button" data-p="${i}" aria-pressed="false">${p.n}</button>`).join('');
+const ins = [...document.querySelectorAll('#pMats input')], shs = [...document.querySelectorAll('#pMats .sh')];
+function put() { ins.forEach((el, i) => { el.value = x[i] ? n1(x[i]).replace(',', '') : '0.0'; }); }
+function draw(fromInputs) {
+  if (fromInputs) x = ins.map(el => Math.max(0, parseFloat(el.value) || 0));
+  const tot = sum(x), r = calc(x);
+  $('pTot').textContent = n1(tot) + '%'; $('pTot').className = 'num' + (Math.abs(tot - 100) > .05 ? ' bad' : '');
+  shs.forEach((el, i) => { el.style.width = Math.min(100, x[i]*3) + '%'; });
+  document.querySelectorAll('.chip').forEach((b, i) => { const same = PRE[i].x.every((v, j) => Math.abs(v - x[j]) < .05); b.setAttribute('aria-pressed', same); if (same) $('pChipNote').textContent = PRE[i].s; });
+  if (![...document.querySelectorAll('.chip')].some(b => b.getAttribute('aria-pressed') === 'true')) $('pChipNote').textContent = 'custom mix';
+  const d = r.t - real.t, dm = r.mam - real.mam, col = d < -.5 ? 'var(--green)' : d > .5 ? 'var(--orange)' : 'var(--ink2)';
+  $('pVerd').style.setProperty('--c', col); $('pVerd').textContent = d < -.5 ? 'Better than last week' : d > .5 ? 'Worse than last week' : 'In line with last week';
+  $('pMam').textContent = Math.round(r.mam); $('pMam').style.setProperty('--c', col);
+  $('pMamD').textContent = (dm > 0 ? '+' : dm < 0 ? '−' : '') + Math.abs(Math.round(dm)) + ' vs last week (' + Math.round(real.mam) + ')';
+  $('pC').textContent = '€' + n1(r.c); $('pT').textContent = '€' + n1(r.t);
+  $('pD').textContent = (d > 0 ? '+' : d < 0 ? '−' : '') + '€' + n1(Math.abs(d)) + ' / t'; $('pD').className = 'num ' + (d < -.5 ? 'g' : d > .5 ? 'o' : '');
+  const rows = PRE.map(p => ({ n: p.n, t: calc(p.x).t, me: false })).concat([{ n: 'Your mix', t: r.t, me: true }]);
+  const lo = Math.min(...rows.map(q => q.t)) - 2, hi = Math.max(...rows.map(q => q.t));
+  $('pBars').innerHTML = rows.map(q => `<div class="bar2${q.me ? ' me' : ''}"><span>${q.n}</span><i style="width:${(8 + 92*(q.t - lo)/(hi - lo || 1)).toFixed(1)}%"></i><b class="num">${n1(q.t)}</b></div>`).join('');
+}
+$('pMats').addEventListener('input', () => draw(true));
+$('pChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { x = PRE[+b.dataset.p].x.slice(); put(); draw(); } });
+$('pNorm').addEventListener('click', () => { const s = sum(x) || 1; x = x.map(v => v*100/s); put(); draw(); });
+$('pBack').addEventListener('click', () => window.__twin.leavePlan());
+// cheapest mix: small swaps between purchased materials, each within ±3 points of last week; internal returns (price under €50/t) are fixed by production
+$('pSug').addEventListener('click', () => {
+  const W = 3, STEP = .5, lo = REAL.x.map((v, i) => MATS[i].p < 50 ? v : Math.max(0, v - W)), hi = REAL.x.map((v, i) => MATS[i].p < 50 ? v : v + W);
+  const y = REAL.x.slice(); let cur = calc(y).t;
+  for (let it = 0; it < 600; it++) {
+    let best = null;
+    for (let i = 0; i < y.length; i++) for (let j = 0; j < y.length; j++) {
+      if (i === j || y[i] - STEP < lo[i] - 1e-9 || y[j] + STEP > hi[j] + 1e-9) continue;
+      y[i] -= STEP; y[j] += STEP; const v = calc(y).t; y[i] += STEP; y[j] -= STEP;
+      if (v < cur - 1e-6 && (!best || v < best.v)) best = { i, j, v };
+    }
+    if (!best) break; y[best.i] -= STEP; y[best.j] += STEP; cur = best.v;
+  }
+  x = y; put(); draw(); const r = calc(x);
+  $('pSugNote').textContent = 'Suggested: shifts of up to 3 points on purchased materials, ' + n1(real.t - r.t) + ' €/t of liquid cheaper than last week, MAM ' + Math.round(r.mam) + '. A model result: chemistry limits are not checked.';
+});
+put(); draw();
 })();
 </script>
