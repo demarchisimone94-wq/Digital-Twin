@@ -827,21 +827,21 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
 <aside class="insp mat" aria-label="Twin data">
 <div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="1.5 1 13 13" width="22" height="22"><defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd60a"/><stop offset="1" stop-color="#ff6b0a"/></linearGradient></defs><path d="M3 4h10l-1.4 8.2a1.5 1.5 0 0 1-1.5 1.3H5.9a1.5 1.5 0 0 1-1.5-1.3z" fill="url(#mg)"/><path d="M8 1.5v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><div><h1>Electric arc furnace</h1><p>Heat twin · Dalmine</p></div></div>
 <div class="week" aria-label="Recent heats">
-  <div><span>Avg MAM</span><b class="num" id="wM"></b></div>
+  <div><span>Avg CTT</span><b class="num" id="wM"></b></div>
   <div><span>Unweighed</span><b class="num" id="wL"></b></div>
   <div><span>To review</span><b class="num" id="wR"></b></div>
 </div>
 
 
   <div class="hd"><div><h2 id="cId"></h2><p id="cSub"></p></div><span class="pill" id="cPill"></span></div>
-  <div class="hero"><span class="hl">Corrected MAM</span><b class="num" id="cMam"></b><div class="kv"><span>Official</span><span class="num" id="cOff"></span></div><div class="kv"><span>Difference</span><span class="num G" id="cDiff"></span></div></div>
+  <div class="hero"><span class="hl">Corrected CTT</span><b class="num" id="cMam"></b><div class="kv"><span>Official</span><span class="num" id="cOff"></span></div><div class="kv"><span>Difference</span><span class="num G" id="cDiff"></span></div></div>
   <div class="bal">
     <div class="lbl"><span>Ladle reading vs expected</span><em class="num" id="cGap"></em></div>
     <div class="bar"><div class="g" id="bG"></div></div><div class="scale"><span>−1 t</span><span>expected</span><span>+1 t</span></div>
     <div class="trio"><div><span>Charged</span><b class="num" id="cC"></b></div><div><span>Ladle</span><b class="num" id="cL"></b></div><div><span>Expected</span><b class="num" id="cA"></b></div></div>
     <div class="xrow"><span>Bar scale <i>cross-check</i></span><b class="num" id="cB">—</b></div>
   </div>
-  <div class="sec"><h3>MAM per heat</h3><svg class="spark" id="spark" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
+  <div class="sec"><h3>CTT per heat</h3><svg class="spark" id="spark" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
     <div class="leg"><span style="--c:var(--ink3)">official</span><span style="--c:var(--green)">corrected</span></div></div>
   <details class="sec fold" open><summary><h3>Recent heats</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary><div class="list" id="list"></div></details>
   <details class="sec fold"><summary><h3>New heat from sensors</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary>
@@ -862,7 +862,7 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
 <button class="modebtn" id="modeBtn" type="button" role="switch" aria-checked="false" aria-label="Mix planner mode"><span class="tg"><span class="kb"></span></span><span class="sg m">Heat monitor</span><span class="sg p">Mix planner</span></button>
 <aside class="pout" id="pout" aria-label="Prediction">
   <span class="pverd" id="pVerd"></span>
-  <div class="pbig"><span class="kk">Predicted MAM</span><b class="num" id="pMam"></b><small id="pMamD"></small></div>
+  <div class="pbig"><span class="kk">Predicted CTT</span><b class="num" id="pMam"></b><small id="pMamD"></small></div>
   <div>
     <div class="prow"><span>Cost per t of charge</span><b class="num" id="pC"></b></div>
     <div class="prow"><span>Cost per t of liquid steel</span><b class="num" id="pT"></b></div>
