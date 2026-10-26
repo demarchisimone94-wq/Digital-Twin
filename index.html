@@ -149,7 +149,9 @@ add(crane, new THREE.BoxGeometry(130, 1.1, 1.1), STD(0x3a3d44, .5, .8), 18, 0, 0
 const trolley = add(crane, new THREE.BoxGeometry(2.6, 1, 2), STD(0x6a5a2a, .6, .6), 0, -1, 0);
 
 /* ---------- furnace ---------- */
-const pivot = new THREE.Group(); pivot.position.set(3.4, 1, 0); scene.add(pivot);
+const furnLift = new THREE.Group(); scene.add(furnLift); // mix planner: the furnace leaves the plant and comes to the viewer
+const liftK = new Spring(0, .95, 1), _fw = new THREE.Vector3(), _fc = new THREE.Vector3(0, 2.6, 0);
+const pivot = new THREE.Group(); pivot.position.set(3.4, 1, 0); furnLift.add(pivot);
 const body = new THREE.Group(); body.position.set(-3.4, -1, 0); pivot.add(body);
 const bowl = add(body, new THREE.LatheGeometry([[0, 1.0], [1.8, 1.04], [2.8, 1.35], [3.35, 2.0], [3.5, 2.8], [3.5, 3.4]].map(p => new THREE.Vector2(p[0], p[1])), 72), mShell); bowl.material.side = THREE.DoubleSide;
 add(body, new THREE.CylinderGeometry(3.52, 3.5, 1.3, 72, 1, true), mShell, 0, 4.0, 0).material = new THREE.MeshStandardMaterial({ color: 0x4a5059, roughness: .55, metalness: .75, map: steel, side: THREE.FrontSide, envMapIntensity: .55 }); // outside only: its inner face showed through the lining as dark wedges
@@ -451,7 +453,7 @@ function frame(dt) {
   TW.t = t; TW.lf = lf; TW.weighed = weighed/NB; TW.overview = overview;
   const bw = Math.max(.001, weighed/NB); bBar.scale.x = bw; bBar.position.x = -.33*(1 - bw);
   // camera follows the ladle to the caster
-  if (planMode) { S.cx.t = 0; S.cr.t = 0; } else if (overview) { S.cx.t = 16.5; S.cr.t = 46; } else { S.cx.t = { carica: -5, fusione: 0, colata: 4, taglio: 29 }[M.phase.id]; S.cr.t = M.phase.id === 'taglio' ? 27 : M.phase.id === 'carica' ? 6 : 0; } // each phase framed inside the free area, nothing cut by the stats column
+  if (planMode) { } else if (overview) { S.cx.t = 16.5; S.cr.t = 46; } else { S.cx.t = { carica: -5, fusione: 0, colata: 4, taglio: 29 }[M.phase.id]; S.cr.t = M.phase.id === 'taglio' ? 27 : M.phase.id === 'carica' ? 6 : 0; } // each phase framed inside the free area, nothing cut by the stats column
   const onYard = Math.abs(hook.position.x - YARD_X) < .3 && hook.position.y < 4.1 ? 1 : 0;
   yardW = clamp(yardW + (onYard - yardW)*clamp(dt*3)); const yw = Math.max(.001, yardW); yardBar.scale.x = yw; yardBar.position.x = -.33*(1 - yw); yardG.position.y = -.03*yardW; // platform settles slightly under load
   // glow lights
@@ -484,6 +486,7 @@ function frame(dt) {
   scene.fog.near = r*1.1; scene.fog.far = r*2.6; // fog keeps the same feel at every zoom
   const px = pan.x.step(dt), pz = pan.z.step(dt);
   camera.position.set(cxv + px + r*Math.sin(p)*Math.sin(a), Math.max(1.2, 3.6 + r*Math.cos(p)), pz + r*Math.sin(p)*Math.cos(a)); camera.lookAt(cxv + px, 3.6, pz); // camera never goes below the floor
+  const lk = liftK.step(dt); camera.getWorldDirection(_fw); furnLift.position.copy(camera.position).addScaledVector(_fw, 23).sub(_fc).multiplyScalar(lk); furnLift.rotation.y = lk*.5;
   for (const c of hallCols) c.visible = Math.hypot(camera.position.x - c.position.x, camera.position.z - c.position.z) > 7; // a hall column next to the lens would fill the screen with black
   composer.render();
 }
@@ -579,12 +582,12 @@ function onFurnace(e) {
 function goPlan() {
   if (planMode) return; planSave = { t, playing, overview }; planMode = true; resetPan(); overview = false;
   document.body.classList.remove('ov'); document.body.classList.add('plan');
-  t = 6.9; playing = false; auto = false; hold = 0; az.t = .5; po.t = .88; rad.t = 27; sync(); // end of charging: pile in, roof open
+  t = 6.9; playing = false; auto = false; hold = 0; liftK.t = 1; sync(); // end of charging: pile in, roof open
 }
 function leavePlan() {
   if (!planMode) return; planMode = false; document.body.classList.remove('plan'); const s0 = planSave;
   t = s0.t; playing = s0.playing; overview = s0.overview; document.body.classList.toggle('ov', overview);
-  az.t = overview ? OV.az : HOME.az; po.t = overview ? OV.po : HOME.po; rad.t = HOME.r; sync();
+  liftK.t = 0; sync();
 }
 const fhint = document.createElement('div'); fhint.className = 'fhint'; fhint.textContent = 'Plan the charge mix'; document.body.appendChild(fhint);
 stage.addEventListener('pointermove', e => {
@@ -731,10 +734,15 @@ body.plan { --ip: 380px; }
 body.plan #stage { left: 0; }
 .insp.mat { transition: width .7s cubic-bezier(.22,1,.36,1), inset .7s cubic-bezier(.22,1,.36,1), border-radius .7s cubic-bezier(.22,1,.36,1), background .5s ease; }
 body.plan .insp.mat { top: 14px; bottom: 14px; left: 14px; width: 352px; border-radius: 18px; border: 1px solid rgba(255,255,255,.08); background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
-.modebtn { all: unset; position: fixed; right: 20px; bottom: 20px; z-index: 40; cursor: pointer; padding: 11px 18px; border-radius: 99px; font-size: 13px; font-weight: 600; background: var(--fg); color: #111; box-shadow: 0 10px 30px rgba(0,0,0,.4); transition: transform 120ms, background 120ms; }
-.modebtn:hover { transform: translateY(-1px); }
-.modebtn:active { transform: scale(.97); }
-.modebtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.modebtn { all: unset; position: fixed; right: 22px; bottom: 22px; z-index: 40; cursor: pointer; display: flex; align-items: center; gap: 10px; -webkit-tap-highlight-color: transparent; }
+.modebtn .lb { font-size: 12px; font-weight: 600; color: var(--fg); text-align: right; line-height: 1.25; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+.modebtn .lb small { display: block; font-weight: 500; color: var(--ink2); font-size: 11px; }
+.modebtn .tr { position: relative; width: 34px; height: 62px; border-radius: 99px; background: #4a4a4f; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 24px rgba(0,0,0,.4); transition: background .35s ease; }
+.modebtn .kn { position: absolute; left: 3px; top: 31px; width: 28px; height: 28px; border-radius: 50%; background: #f5f5f5; box-shadow: 0 2px 6px rgba(0,0,0,.35); transition: top .45s cubic-bezier(.34,1.3,.5,1), width .15s, height .15s; }
+.modebtn:active .kn { transform: scale(.93); }
+.modebtn[aria-checked="true"] .tr { background: #5aa585; }
+.modebtn[aria-checked="true"] .kn { top: 3px; }
+.modebtn:focus-visible .tr { outline: 2px solid var(--accent); outline-offset: 2px; }
 body.plan .dock, body.plan .tag, body.plan .st, body.plan .ovhint, body.plan .back, body.plan .hint { display: none !important; }
 .fhint { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .15s; padding: 6px 11px; border-radius: 99px; font-size: 12px; font-weight: 600; background: #1c1c21; border: 1px solid rgba(255,255,255,.12); color: var(--fg); }
 section.plan { display: none; }
@@ -753,7 +761,7 @@ body.plan section.plan { display: flex; flex-direction: column; gap: 12px; }
 .chip:focus-visible { outline: 1px solid var(--accent); }
 .chipnote { color: var(--ink3); font-size: 11px; min-height: 14px; margin-top: -6px; }
 .mats { display: flex; flex-direction: column; }
-.mat-row { display: grid; grid-template-columns: 1fr 52px 64px; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid rgba(255,255,255,.06); font-size: 13px; position: relative; }
+.mat-row { display: grid; grid-template-columns: 1fr 66px 60px; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid rgba(255,255,255,.06); font-size: 13px; position: relative; }
 .mat-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mat-row .pr { color: var(--ink3); font-size: 11px; text-align: right; }
 .mat-row input { box-sizing: border-box; width: 100%; padding: 5px 6px; border-radius: 7px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: var(--fg); font: 500 13px/1 inherit; font-family: inherit; text-align: right; }
@@ -768,9 +776,18 @@ body.plan section.plan { display: flex; flex-direction: column; gap: 12px; }
 .pbtn:focus-visible { outline: 1px solid var(--accent); }
 .pbtn.sm { padding: 5px 9px; font-size: 12px; }
 .plan .note, .pout .note { color: var(--ink3); font-size: 11px; line-height: 1.45; }
-.pout { position: fixed; right: 14px; top: 14px; bottom: 14px; width: 352px; box-sizing: border-box; padding: 20px 18px; overflow: auto; border-radius: 18px; background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 60px rgba(0,0,0,.5); opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(26px) scale(.98); transition: opacity .5s ease, transform .55s cubic-bezier(.2,.8,.2,1), visibility .45s; z-index: 20; display: flex; flex-direction: column; gap: 16px; scrollbar-width: none; }
+.pout { position: fixed; right: 14px; top: 14px; bottom: 14px; width: 352px; box-sizing: border-box; padding: 20px 18px; overflow: auto; border-radius: 18px; background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 60px rgba(0,0,0,.5); opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(26px) scale(.98); transition: opacity .5s ease, transform .7s cubic-bezier(.22,1,.36,1), filter .6s ease, visibility .5s; z-index: 20; display: flex; flex-direction: column; gap: 16px; scrollbar-width: none; }
 body.plan .pout { opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
-.modebtn { transition: transform .7s cubic-bezier(.22,1,.36,1), background 120ms; }
+/* the camera flies to the furnace first, then the panels arrive */
+/* materials arrive like glass: blur, scale and opacity together; transitions (not keyframes) so a second click reverses mid-flight from where they are */
+body.plan .insp.mat { transition-delay: .3s; }
+body.plan section.plan > * { animation: none; }
+.pout { filter: blur(6px); transform-origin: 100% 100%; }
+body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the switch sits under the panel, never on it */
+.pbig b { font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.plan h2 { letter-spacing: -.02em; }
+@media (prefers-reduced-motion: reduce) { .pout, .insp.mat, #stage, .modebtn { transition-duration: .2s !important; transition-delay: 0s !important; transform: none !important; filter: none !important; } }
+@media (prefers-reduced-transparency: reduce) { body.plan .insp.mat, .pout { background: #141418 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } }
 .pout h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
 .pout .kk { color: var(--ink2); font-size: 12px; }
 .pverd { align-self: flex-start; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
@@ -834,7 +851,7 @@ body.plan .pout { opacity: 1; visibility: visible; pointer-events: auto; transfo
 </aside>
 
 
-<button class="modebtn" id="modeBtn" type="button">Mix planner</button>
+<button class="modebtn" id="modeBtn" type="button" role="switch" aria-checked="false" aria-label="Mix planner"><span class="lb" id="modeLb"></span><span class="tr"><span class="kn"></span></span></button>
 <aside class="pout" id="pout" aria-label="Prediction">
   <span class="pverd" id="pVerd"></span>
   <div class="pbig"><span class="kk">Predicted MAM</span><b class="num" id="pMam"></b><small id="pMamD"></small></div>
@@ -843,7 +860,7 @@ body.plan .pout { opacity: 1; visibility: visible; pointer-events: auto; transfo
     <div class="prow"><span>Cost per t of liquid steel</span><b class="num" id="pT"></b></div>
     <div class="prow"><span>vs last week's mix</span><b class="num" id="pD"></b></div>
   </div>
-  <div><h3>Cost per t of liquid steel, by mix</h3><div class="bars" id="pBars"></div></div>
+  <div><h3>Cost of liquid steel by mix <span class="kk">(€/t)</span></h3><div class="bars" id="pBars"></div></div>
   <p class="note">Prediction, not measurement. Each material's yield is fitted to the six MAM values of the sheet, so it is reliable for mixes close to those and gets weaker the further you move away.</p>
 </aside>
 <button class="back mat" type="button" id="back" aria-label="Whole line" title="Whole line"><svg class="ex" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="co" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
@@ -960,7 +977,7 @@ function offset() { const c = window.__cam; if (!c) return; const w = innerWidth
 addEventListener('resize', offset); offset();
 let R = null, IR = 0, maxW = 0; // layout read once per frame, so label writes don't force a reflow each
 const pj = (x, y, z, el) => { const r = R, v = new THREE.Vector3(x, y, z).project(window.__cam);
-  el.style.left = (r.left + (v.x + 1) / 2 * r.width) + 'px'; el.style.visibility = el.classList.contains('tag') && (r.left + (v.x + 1) / 2 * r.width) < IR + 70 ? 'hidden' : ''; el.style.top = (r.top + (1 - v.y) / 2 * r.height) + 'px'; };
+  el.style.left = (r.left + (v.x + 1) / 2 * r.width) + 'px'; el.style.visibility = (r.left + (v.x + 1) / 2 * r.width) < IR + 80 ? 'hidden' : ''; /* nothing floats over the dashboard */ el.style.top = (r.top + (1 - v.y) / 2 * r.height) + 'px'; };
 // a scale's reading appears when that scale is in use, then stays until the replay starts over
 const show = (el, on) => { el.style.setProperty('--o', on ? 1 : 0); el.style.setProperty('--k', on ? 1 : .9); };
 const SPOT = { carica: [-11.5, .2, 3.6], fusione: [0, .2, 5], colata: [7.7, .2, 3.8], taglio: [34, .2, 3.4] }; // pills sit on the floor in front of each station, under the scale readings
@@ -1006,7 +1023,7 @@ const sum = x => x.reduce((a, b) => a + b, 0);
 const calc = x => { const s = sum(x) || 1; let c = 0, y = 0; x.forEach((v, i) => { c += MATS[i].p*v/s; y += YF[i]*v/s; }); return { c, mam: y*1000, t: c*y }; };
 const REAL = PRE[5], real = calc(REAL.x);
 let x = REAL.x.slice();
-$('pMats').innerHTML = MATS.map((m, i) => `<label class="mat-row"><span class="nm" title="${m.n}">${m.n}</span><span class="pr num">€${n1(m.p)}</span><input type="number" inputmode="decimal" min="0" max="100" step="0.1" data-i="${i}" aria-label="${m.n} %"><i class="sh"></i></label>`).join('');
+$('pMats').innerHTML = MATS.map((m, i) => `<label class="mat-row"><span class="nm" title="${m.n}">${m.n}</span><span class="pr num">€${n1(m.p)}/t</span><input type="number" inputmode="decimal" min="0" max="100" step="0.1" data-i="${i}" aria-label="${m.n} %"><i class="sh"></i></label>`).join('');
 $('pChips').innerHTML = PRE.map((p, i) => `<button class="chip" type="button" data-p="${i}" aria-pressed="false">${p.n}</button>`).join('');
 const ins = [...document.querySelectorAll('#pMats input')], shs = [...document.querySelectorAll('#pMats .sh')];
 function put() { ins.forEach((el, i) => { el.value = x[i] ? n1(x[i]).replace(',', '') : '0.0'; }); }
@@ -1021,7 +1038,7 @@ function draw(fromInputs) {
   $('pVerd').style.setProperty('--c', col); $('pVerd').textContent = d < -.5 ? 'Better than last week' : d > .5 ? 'Worse than last week' : 'In line with last week';
   $('pMam').textContent = Math.round(r.mam); $('pMam').style.setProperty('--c', col);
   $('pMamD').textContent = (dm > 0 ? '+' : dm < 0 ? '−' : '') + Math.abs(Math.round(dm)) + ' vs last week (' + Math.round(real.mam) + ')';
-  $('pC').textContent = '€' + n1(r.c); $('pT').textContent = '€' + n1(r.t);
+  $('pC').textContent = '€' + n1(r.c) + ' / t'; $('pT').textContent = '€' + n1(r.t) + ' / t';
   $('pD').textContent = (d > 0 ? '+' : d < 0 ? '−' : '') + '€' + n1(Math.abs(d)) + ' / t'; $('pD').className = 'num ' + (d < -.5 ? 'g' : d > .5 ? 'o' : '');
   const rows = PRE.map(p => ({ n: p.n, t: calc(p.x).t, me: false })).concat([{ n: 'Your mix', t: r.t, me: true }]);
   const lo = Math.min(...rows.map(q => q.t)) - 2, hi = Math.max(...rows.map(q => q.t));
@@ -1048,7 +1065,7 @@ $('pSug').addEventListener('click', () => {
   $('pSugNote').textContent = 'Suggested: shifts of up to 3 points on purchased materials, ' + n1(real.t - r.t) + ' €/t of liquid cheaper than last week, MAM ' + Math.round(r.mam) + '. A model result: chemistry limits are not checked.';
 });
 put(); draw();
-const mb = $('modeBtn'), sync = () => { mb.textContent = document.body.classList.contains('plan') ? 'Heat monitor' : 'Mix planner'; };
+const mb = $('modeBtn'), sync = () => { const on = document.body.classList.contains('plan'); mb.setAttribute('aria-checked', on); $('modeLb').innerHTML = on ? 'Mix planner<small>prediction</small>' : 'Heat monitor<small>live</small>'; };
 mb.addEventListener('click', () => document.body.classList.contains('plan') ? window.__twin.leavePlan() : window.__twin.goPlan());
 new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ['class'] }); sync();
 })();
