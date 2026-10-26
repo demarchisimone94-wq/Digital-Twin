@@ -802,7 +802,7 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
 .prow b { color: var(--fg); font-weight: 600; }
 .prow b.g { color: var(--green); } .prow b.o { color: var(--orange); }
 .bars { display: flex; flex-direction: column; gap: 7px; }
-.bar2 { display: grid; grid-template-columns: 74px 1fr 46px; align-items: center; gap: 8px; font-size: 12px; color: var(--ink2); }
+.bar2 { display: grid; grid-template-columns: 74px 1fr 76px; align-items: center; gap: 8px; font-size: 12px; color: var(--ink2); }
 .bar2 i { display: block; height: 8px; border-radius: 4px; background: rgba(235,235,245,.28); transition: width .35s cubic-bezier(.2,.8,.2,1); }
 .bar2.me { color: var(--fg); } .bar2.me i { background: var(--green); }
 .bar2 b { text-align: right; font-weight: 500; color: var(--fg); }
@@ -865,7 +865,7 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
     <div class="prow"><span>Cost per t of liquid steel</span><b class="num" id="pT"></b></div>
     <div class="prow"><span>vs last week's mix</span><b class="num" id="pD"></b></div>
   </div>
-  <div><h3>Cost of liquid steel by mix <span class="kk">(€/t)</span></h3><div class="bars" id="pBars"></div></div>
+  <div><h3>Cost of liquid steel by mix</h3><div class="bars" id="pBars"></div></div>
   <p class="note">These figures are predictions. Each material's yield is fitted to the six MAM values in the sheet, so they hold for mixes close to those six and get less reliable the further you move away.</p>
 </aside>
 <button class="back mat" type="button" id="back" aria-label="Whole line" title="Whole line"><svg class="ex" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="co" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
@@ -1047,7 +1047,7 @@ function draw(fromInputs) {
   $('pD').textContent = (d > 0 ? '+' : d < 0 ? '−' : '') + '€' + n1(Math.abs(d)) + ' / t'; $('pD').className = 'num ' + (d < -.5 ? 'g' : d > .5 ? 'o' : '');
   const rows = PRE.map(p => ({ n: p.n, t: calc(p.x).t, me: false })).concat([{ n: 'Your mix', t: r.t, me: true }]);
   const lo = Math.min(...rows.map(q => q.t)) - 2, hi = Math.max(...rows.map(q => q.t));
-  $('pBars').innerHTML = rows.map(q => `<div class="bar2${q.me ? ' me' : ''}"><span>${q.n}</span><i style="width:${(8 + 92*(q.t - lo)/(hi - lo || 1)).toFixed(1)}%"></i><b class="num">${n1(q.t)}</b></div>`).join('');
+  $('pBars').innerHTML = rows.map(q => `<div class="bar2${q.me ? ' me' : ''}"><span>${q.n}</span><i style="width:${(8 + 92*(q.t - lo)/(hi - lo || 1)).toFixed(1)}%"></i><b class="num">€${n1(q.t)} / t</b></div>`).join('');
 }
 $('pMats').addEventListener('input', () => draw(true));
 $('pChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { x = PRE[+b.dataset.p].x.slice(); put(); draw(); } });
