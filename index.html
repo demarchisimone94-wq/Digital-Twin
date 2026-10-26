@@ -603,7 +603,7 @@ addEventListener('keydown', e => { if (e.key === 'Escape') leavePlan(); });
 function leaveOverview() { overview = false; document.body.classList.remove('ov'); az.t = HOME.az; po.t = HOME.po; rad.t = HOME.r; sync(); } // back to the running phase, replay untouched
 Object.assign(TW, { goPhase, goOverview, leaveOverview, goPlan, leavePlan });
 if (overview) { document.body.classList.add('ov'); az.set(OV.az); po.set(OV.po); S.cx.set(16.5); S.cr.set(46); } // open already framed on the whole chain
-if (reduce) document.getElementById('hint').textContent = 'Animazioni ridotte: usa la barra in basso.';
+if (reduce) document.getElementById('hint').textContent = 'Reduced motion is on: use the bar at the bottom.';
 let last = performance.now(); sync();
 [S.roof, S.roofLift, S.tilt, ...S.eY, S.bx, S.by, S.br, S.car, S.cx, S.cr].forEach(k => k.set(k.t));
 const SPEED = { carica: .7, fusione: 4.5, colata: 1.15, taglio: 1.25 }; // replay minutes per second, per phase
@@ -848,7 +848,7 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
     <div class="ptot"><span>Total</span><span><b id="pTot"></b> <button class="pbtn sm" type="button" id="pNorm">Normalise</button></span></div>
     <button class="pbtn" type="button" id="pSug">Suggest cheapest mix</button>
     <p class="note" id="pSugNote"></p>
-    <p class="note">Material names are estimates: the source sheet was partly cropped. Prices are the standard €/t from the sheet.</p>
+    <p class="note">Material names are estimates because the source sheet was partly cropped. Prices are the sheet's standard €/t.</p>
   </section>
 </aside>
 
@@ -863,7 +863,7 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
     <div class="prow"><span>vs last week's mix</span><b class="num" id="pD"></b></div>
   </div>
   <div><h3>Cost of liquid steel by mix <span class="kk">(€/t)</span></h3><div class="bars" id="pBars"></div></div>
-  <p class="note">Prediction, not measurement. Each material's yield is fitted to the six MAM values of the sheet, so it is reliable for mixes close to those and gets weaker the further you move away.</p>
+  <p class="note">These figures are predictions. Each material's yield is fitted to the six MAM values in the sheet, so they hold for mixes close to those six and get less reliable the further you move away.</p>
 </aside>
 <button class="back mat" type="button" id="back" aria-label="Whole line" title="Whole line"><svg class="ex" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="co" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
 <button class="st mat" type="button" data-id="carica" style="--c:#aab3c2"><i></i>Charging</button>
@@ -1064,7 +1064,7 @@ $('pSug').addEventListener('click', () => {
     if (!best) break; y[best.i] -= STEP; y[best.j] += STEP; cur = best.v;
   }
   x = y; put(); draw(); const r = calc(x);
-  $('pSugNote').textContent = 'Suggested: shifts of up to 3 points on purchased materials, ' + n1(real.t - r.t) + ' €/t of liquid cheaper than last week, MAM ' + Math.round(r.mam) + '. A model result: chemistry limits are not checked.';
+  $('pSugNote').textContent = 'Purchased materials move by up to 3 points. Liquid steel costs ' + n1(real.t - r.t) + ' €/t less than last week, with MAM ' + Math.round(r.mam) + '. Chemistry limits are not checked.';
 });
 put(); draw();
 const mb = $('modeBtn'), sync = () => { const on = document.body.classList.contains('plan'); mb.setAttribute('aria-checked', on); $('modeLb').innerHTML = on ? 'Mix planner<small>prediction</small>' : 'Heat monitor<small>live</small>'; };
