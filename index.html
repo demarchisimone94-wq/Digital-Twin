@@ -736,15 +736,18 @@ body.plan { --ip: 380px; }
 .insp.mat { transition: width .55s cubic-bezier(.2,.8,.2,1); }
 .insp.mat { transition: width .7s cubic-bezier(.22,1,.36,1), inset .7s cubic-bezier(.22,1,.36,1), border-radius .7s cubic-bezier(.22,1,.36,1), background .5s ease; }
 body.plan .insp.mat { top: 14px; bottom: 14px; left: 14px; width: 352px; border-radius: 18px; border: 1px solid rgba(255,255,255,.08); background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
-.modebtn { all: unset; position: fixed; right: 22px; bottom: 22px; z-index: 40; cursor: pointer; display: flex; align-items: center; gap: 10px; -webkit-tap-highlight-color: transparent; }
-.modebtn .lb { font-size: 12px; font-weight: 600; color: var(--fg); text-align: right; line-height: 1.25; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
-.modebtn .lb small { display: block; font-weight: 500; color: var(--ink2); font-size: 11px; }
-.modebtn .tr { position: relative; width: 34px; height: 62px; border-radius: 99px; background: #4a4a4f; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 24px rgba(0,0,0,.4); transition: background .35s ease; }
-.modebtn .kn { position: absolute; left: 3px; top: 31px; width: 28px; height: 28px; border-radius: 50%; background: #f5f5f5; box-shadow: 0 2px 6px rgba(0,0,0,.35); transition: top .45s cubic-bezier(.34,1.3,.5,1), width .15s, height .15s; }
-.modebtn:active .kn { transform: scale(.93); }
-.modebtn[aria-checked="true"] .tr { background: #5aa585; }
-.modebtn[aria-checked="true"] .kn { top: 3px; }
-.modebtn:focus-visible .tr { outline: 2px solid var(--accent); outline-offset: 2px; }
+.modebtn { all: unset; position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: max(18px, env(safe-area-inset-bottom, 0px)); z-index: 40; cursor: pointer; display: grid; grid-template-rows: 1fr 1fr; padding: 5px; border-radius: 18px; background: rgba(18,18,22,.62); -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.35); -webkit-tap-highlight-color: transparent; }
+.modebtn .sg { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 9px 14px 9px 11px; font-size: 12px; font-weight: 600; color: var(--ink2); transition: color .3s ease; white-space: nowrap; }
+.modebtn .sg i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .5; transition: opacity .3s, background .3s; }
+.modebtn .hl { position: absolute; left: 5px; right: 5px; top: 5px; height: calc(50% - 5px); border-radius: 13px; background: rgba(255,255,255,.95); box-shadow: 0 2px 8px rgba(0,0,0,.3); transition: transform .45s cubic-bezier(.22,1,.36,1); }
+.modebtn[aria-checked="true"] .hl { transform: translateY(100%); }
+.modebtn[aria-checked="false"] .sg.m, .modebtn[aria-checked="true"] .sg.p { color: #111; }
+.modebtn[aria-checked="false"] .sg.m i { background: var(--green); opacity: 1; }
+.modebtn[aria-checked="true"] .sg.p i { background: #3d7cf0; opacity: 1; }
+.modebtn:hover .sg { color: var(--fg); }
+.modebtn:hover[aria-checked="false"] .sg.m, .modebtn:hover[aria-checked="true"] .sg.p { color: #111; }
+.modebtn:active .hl { scale: .97; }
+.modebtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 body.plan .dock, body.plan .tag, body.plan .st, body.plan .ovhint, body.plan .back, body.plan .hint { display: none !important; }
 .fhint { position: fixed; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .15s; padding: 6px 11px; border-radius: 99px; font-size: 12px; font-weight: 600; background: #1c1c21; border: 1px solid rgba(255,255,255,.12); color: var(--fg); }
 section.plan { display: none; }
@@ -853,7 +856,7 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
 </aside>
 
 
-<button class="modebtn" id="modeBtn" type="button" role="switch" aria-checked="false" aria-label="Mix planner"><span class="lb" id="modeLb"></span><span class="tr"><span class="kn"></span></span></button>
+<button class="modebtn" id="modeBtn" type="button" role="switch" aria-checked="false" aria-label="Mix planner mode"><span class="hl"></span><span class="sg m"><i></i>Heat monitor</span><span class="sg p"><i></i>Mix planner</span></button>
 <aside class="pout" id="pout" aria-label="Prediction">
   <span class="pverd" id="pVerd"></span>
   <div class="pbig"><span class="kk">Predicted MAM</span><b class="num" id="pMam"></b><small id="pMamD"></small></div>
@@ -1067,7 +1070,7 @@ $('pSug').addEventListener('click', () => {
   $('pSugNote').textContent = 'Purchased materials move by up to 3 points. Liquid steel costs ' + n1(real.t - r.t) + ' €/t less than last week, with MAM ' + Math.round(r.mam) + '. Chemistry limits are not checked.';
 });
 put(); draw();
-const mb = $('modeBtn'), sync = () => { const on = document.body.classList.contains('plan'); mb.setAttribute('aria-checked', on); $('modeLb').innerHTML = on ? 'Mix planner<small>prediction</small>' : 'Heat monitor<small>live</small>'; };
+const mb = $('modeBtn'), sync = () => { const on = document.body.classList.contains('plan'); mb.setAttribute('aria-checked', on);  };
 mb.addEventListener('click', () => document.body.classList.contains('plan') ? window.__twin.leavePlan() : window.__twin.goPlan());
 new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ['class'] }); sync();
 })();
