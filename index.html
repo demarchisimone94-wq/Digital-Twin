@@ -117,7 +117,10 @@ const grade = new THREE.ShaderPass({
       float g = fract(sin(dot(vUv*1013., vec2(12.9898, 78.233)))*43758.5453); c += (g - .5)*.012; gl_FragColor = vec4(c, 1.); }`
 });
 composer.addPass(grade);
-function size() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix(); }
+let planMode = false, planSave = null; // mix planner: the furnace comes to the viewer and the replay is held
+let VW = 1, VH = 1, sideW = 0;
+function size() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix(); VW = w; VH = h; const ins = document.querySelector('.insp'); if (!planMode) sideW = ins && innerWidth > 860 ? ins.getBoundingClientRect().right : 0; }
+const viewK = new Spring(1, .7, 1); // the canvas never resizes on a mode switch: the view slides instead, so no black frames
 new ResizeObserver(size).observe(stage); size();
 
 /* ---------- materials ---------- */
@@ -379,7 +382,6 @@ let t = FROZEN ? window.__static : 0, overview = window.__overview ?? !FROZEN, p
 const TW = window.__twin = { t: 0, lf: 0, weighed: 0, overview };
 const S = { roof: new Spring(1.7, .55, 1), roofLift: new Spring(1, .55, 1), tilt: new Spring(0, .55, 1), eY: [0, 1, 2].map(() => new Spring(14, .6, 1)), bx: new Spring(-17, .65, 1), by: new Spring(17, .65, 1), br: new Spring(0, .5, .85), car: new Spring(0, 1.1, 1), cx: new Spring(1.6, .9, 1), cr: new Spring(0, .9, 1) };
 if (FROZEN) {}
-let planMode = false, planSave = null; // mix planner: camera closes in on the furnace and the replay is held
 const worldTip = new THREE.Vector3(), vB = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
 let M = model(t);
 function applyTargets() {
@@ -488,6 +490,8 @@ function frame(dt) {
   camera.position.set(cxv + px + r*Math.sin(p)*Math.sin(a), Math.max(1.2, 3.6 + r*Math.cos(p)), pz + r*Math.sin(p)*Math.cos(a)); camera.lookAt(cxv + px, 3.6, pz); // camera never goes below the floor
   const lk = liftK.step(dt); camera.getWorldDirection(_fw); furnLift.position.copy(camera.position).addScaledVector(_fw, 23).sub(_fc).multiplyScalar(lk); furnLift.rotation.y = lk*.5;
   for (const c of hallCols) c.visible = Math.hypot(camera.position.x - c.position.x, camera.position.z - c.position.z) > 7; // a hall column next to the lens would fill the screen with black
+    if (!sideW && !planMode) { const ins = document.querySelector('.insp'); sideW = ins && innerWidth > 860 ? ins.getBoundingClientRect().right : 0; } // the sidebar arrives after the scene
+  const vo = viewK.step(dt)*sideW/2; if (vo > .5) camera.setViewOffset(VW, VH, -vo, 0, VW, VH); else camera.clearViewOffset();
   composer.render();
 }
 
@@ -582,12 +586,12 @@ function onFurnace(e) {
 function goPlan() {
   if (planMode) return; planSave = { t, playing, overview }; planMode = true; resetPan(); overview = false;
   document.body.classList.remove('ov'); document.body.classList.add('plan');
-  t = 6.9; playing = false; auto = false; hold = 0; liftK.t = 1; sync(); // end of charging: pile in, roof open
+  t = 6.9; playing = false; auto = false; hold = 0; liftK.t = 1; viewK.t = 0; sync(); // end of charging: pile in, roof open
 }
 function leavePlan() {
   if (!planMode) return; planMode = false; document.body.classList.remove('plan'); const s0 = planSave;
   t = s0.t; playing = s0.playing; overview = s0.overview; document.body.classList.toggle('ov', overview);
-  liftK.t = 0; sync();
+  liftK.t = 0; viewK.t = 1; sync();
 }
 const fhint = document.createElement('div'); fhint.className = 'fhint'; fhint.textContent = 'Plan the charge mix'; document.body.appendChild(fhint);
 stage.addEventListener('pointermove', e => {
@@ -616,7 +620,7 @@ window.__ready = true;
 :root { --ip: 284px; --glass: rgba(24,24,28,.58); --glass-hi: rgba(255,255,255,.07); --ink2: rgba(235,235,245,.6); --ink3: rgba(235,235,245,.32); --green: #30d158; --orange: #ff9f0a; --red: #ff453a; }
 .dock { left: calc(var(--ip) + (100% - var(--ip)) / 2); width: min(560px, calc(100% - var(--ip) - 80px)); }
 .title { display: none; }
-#stage { left: var(--ip); }
+#stage { left: 0; }
 .insp.mat { left: 0; top: 0; bottom: 0; max-height: none; border-radius: 0; border: 0; border-right: 1px solid rgba(255,255,255,.07); background: #121216; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; padding: 20px 16px; }
 .hint { display: none !important; }
 .mat { background: var(--glass); -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
@@ -730,8 +734,6 @@ body.ov .ovhint { display: block; }
 /* mix planner: click the furnace, the camera closes in, inputs on the left, prediction on the right */
 body.plan { --ip: 380px; }
 .insp.mat { transition: width .55s cubic-bezier(.2,.8,.2,1); }
-#stage { transition: left .7s cubic-bezier(.22,1,.36,1); }
-body.plan #stage { left: 0; }
 .insp.mat { transition: width .7s cubic-bezier(.22,1,.36,1), inset .7s cubic-bezier(.22,1,.36,1), border-radius .7s cubic-bezier(.22,1,.36,1), background .5s ease; }
 body.plan .insp.mat { top: 14px; bottom: 14px; left: 14px; width: 352px; border-radius: 18px; border: 1px solid rgba(255,255,255,.08); background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
 .modebtn { all: unset; position: fixed; right: 22px; bottom: 22px; z-index: 40; cursor: pointer; display: flex; align-items: center; gap: 10px; -webkit-tap-highlight-color: transparent; }
