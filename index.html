@@ -847,7 +847,6 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
   <details class="sec fold"><summary><h3>New heat from sensors</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary>
     <form class="add" id="add"><label>Charged (kg)<input name="c" type="number" inputmode="numeric" min="1" step="1" required value="100500"></label><label>Ladle (kg)<input name="l" type="number" inputmode="numeric" min="1" step="1" required value="91400"></label><label>Bars (kg)<input name="b" type="number" inputmode="numeric" min="1" step="1" required value="89300"></label><button type="submit">Analyse heat</button><p>Simulated data: in production these values come from the plant sensors.</p></form></details>
   <section class="plan" id="plan">
-    <button class="pback" type="button" id="pBack" hidden></button>
     <h2>Charge mix</h2>
     <p class="sub">Pick a preset or set the % of each material.</p>
     <div class="chips" id="pChips"></div>
@@ -1061,7 +1060,6 @@ $('pMats').addEventListener('pointerdown', e => { const b = e.target.closest('.s
 addEventListener('pointerup', stopHold); addEventListener('pointercancel', stopHold);
 $('pChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { x = PRE[+b.dataset.p].x.slice(); put(); draw(); } });
 $('pNorm').addEventListener('click', () => { const s = sum(x) || 1; x = x.map(v => v*100/s); put(); draw(); });
-$('pBack').addEventListener('click', () => window.__twin.leavePlan());
 // cheapest mix: small swaps between purchased materials, each within ±3 points of last week; internal returns (price under €50/t) are fixed by production
 $('pSug').addEventListener('click', () => {
   const W = 3, STEP = .5, lo = REAL.x.map((v, i) => MATS[i].p < 50 ? v : Math.max(0, v - W)), hi = REAL.x.map((v, i) => MATS[i].p < 50 ? v : v + W);
