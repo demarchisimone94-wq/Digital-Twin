@@ -579,7 +579,7 @@ function onFurnace(e) {
 function goPlan() {
   if (planMode) return; planSave = { t, playing, overview }; planMode = true; resetPan(); overview = false;
   document.body.classList.remove('ov'); document.body.classList.add('plan');
-  t = 6.9; playing = false; auto = false; hold = 0; az.t = .5; po.t = 1.0; rad.t = 22; sync(); // end of charging: pile in, roof open
+  t = 6.9; playing = false; auto = false; hold = 0; az.t = .5; po.t = .88; rad.t = 27; sync(); // end of charging: pile in, roof open
 }
 function leavePlan() {
   if (!planMode) return; planMode = false; document.body.classList.remove('plan'); const s0 = planSave;
@@ -727,8 +727,10 @@ body.ov .ovhint { display: block; }
 /* mix planner: click the furnace, the camera closes in, inputs on the left, prediction on the right */
 body.plan { --ip: 380px; }
 .insp.mat { transition: width .55s cubic-bezier(.2,.8,.2,1); }
-#stage { transition: left .55s cubic-bezier(.2,.8,.2,1), opacity .5s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
-body.plan #stage { opacity: 0; transform: scale(1.12); pointer-events: none; }
+#stage { transition: left .7s cubic-bezier(.22,1,.36,1); }
+body.plan #stage { left: 0; }
+.insp.mat { transition: width .7s cubic-bezier(.22,1,.36,1), inset .7s cubic-bezier(.22,1,.36,1), border-radius .7s cubic-bezier(.22,1,.36,1), background .5s ease; }
+body.plan .insp.mat { top: 14px; bottom: 14px; left: 14px; width: 352px; border-radius: 18px; border: 1px solid rgba(255,255,255,.08); background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); box-shadow: 0 24px 60px rgba(0,0,0,.5); }
 .modebtn { all: unset; position: fixed; right: 20px; bottom: 20px; z-index: 40; cursor: pointer; padding: 11px 18px; border-radius: 99px; font-size: 13px; font-weight: 600; background: var(--fg); color: #111; box-shadow: 0 10px 30px rgba(0,0,0,.4); transition: transform 120ms, background 120ms; }
 .modebtn:hover { transform: translateY(-1px); }
 .modebtn:active { transform: scale(.97); }
@@ -766,8 +768,9 @@ body.plan section.plan { display: flex; flex-direction: column; gap: 12px; }
 .pbtn:focus-visible { outline: 1px solid var(--accent); }
 .pbtn.sm { padding: 5px 9px; font-size: 12px; }
 .plan .note, .pout .note { color: var(--ink3); font-size: 11px; line-height: 1.45; }
-.pout { position: fixed; right: 0; top: 0; bottom: 0; left: var(--ip, 380px); width: min(620px, calc(100% - var(--ip, 380px))); margin-inline: auto; box-sizing: border-box; padding: 20px 16px; overflow: auto; background: #121216; border-left: 1px solid rgba(255,255,255,.07); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(8px); transition: opacity .45s ease, transform .55s cubic-bezier(.2,.8,.2,1), visibility .45s; z-index: 20; display: flex; flex-direction: column; gap: 16px; scrollbar-width: none; }
+.pout { position: fixed; right: 14px; top: 14px; bottom: 14px; width: 352px; box-sizing: border-box; padding: 20px 18px; overflow: auto; border-radius: 18px; background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 60px rgba(0,0,0,.5); opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(26px) scale(.98); transition: opacity .5s ease, transform .55s cubic-bezier(.2,.8,.2,1), visibility .45s; z-index: 20; display: flex; flex-direction: column; gap: 16px; scrollbar-width: none; }
 body.plan .pout { opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
+.modebtn { transition: transform .7s cubic-bezier(.22,1,.36,1), background 120ms; }
 .pout h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
 .pout .kk { color: var(--ink2); font-size: 12px; }
 .pverd { align-self: flex-start; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
@@ -817,7 +820,7 @@ body.plan .pout { opacity: 1; visibility: visible; pointer-events: auto; transfo
   <details class="sec fold"><summary><h3>New heat from sensors</h3><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></summary>
     <form class="add" id="add"><label>Charged (kg)<input name="c" type="number" inputmode="numeric" min="1" step="1" required value="100500"></label><label>Ladle (kg)<input name="l" type="number" inputmode="numeric" min="1" step="1" required value="91400"></label><label>Bars (kg)<input name="b" type="number" inputmode="numeric" min="1" step="1" required value="89300"></label><button type="submit">Analyse heat</button><p>Simulated data: in production these values come from the plant sensors.</p></form></details>
   <section class="plan" id="plan">
-    <button class="pback" type="button" id="pBack">← Back to heat monitor</button>
+    <button class="pback" type="button" id="pBack" hidden></button>
     <h2>Charge mix</h2>
     <p class="sub">Pick a preset or set the % of each material.</p>
     <div class="chips" id="pChips"></div>
