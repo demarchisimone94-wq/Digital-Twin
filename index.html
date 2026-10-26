@@ -854,7 +854,7 @@ body.plan .pout { filter: none; transition-delay: .45s; bottom: 100px; } /* the 
     <div class="mats" id="pMats"></div>
     <div class="ptot"><span>Total</span><span><b id="pTot"></b> <button class="pbtn sm" type="button" id="pNorm">Normalise</button></span></div>
     <button class="pbtn" type="button" id="pSug">Suggest cheapest mix</button>
-    <p class="note" id="pSugNote"></p>
+    
   </section>
 </aside>
 
@@ -1074,7 +1074,6 @@ $('pSug').addEventListener('click', () => {
     if (!best) break; y[best.i] -= STEP; y[best.j] += STEP; cur = best.v;
   }
   x = y; put(); draw(); const r = calc(x);
-  $('pSugNote').textContent = 'Purchased materials move by up to 3 points. Liquid steel costs ' + n1(real.t - r.t) + ' €/t less than last week, with MAM ' + Math.round(r.mam) + '. Chemistry limits are not checked.';
 });
 put(); draw();
 const mb = $('modeBtn'), sync = () => { const on = document.body.classList.contains('plan'); mb.setAttribute('aria-checked', on);  };
