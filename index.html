@@ -721,7 +721,7 @@ body.ov .ovhint { display: block; }
 
 
   <div class="hd"><div><h2 id="cId"></h2><p id="cSub"></p></div><span class="pill" id="cPill"></span></div>
-  <div class="hero"><span class="hl">Corrected MAM</span><b class="num" id="cMam"></b><div class="kv"><span>Official</span><span class="num" id="cOff"></span></div></div>
+  <div class="hero"><span class="hl">Corrected MAM</span><b class="num" id="cMam"></b><div class="kv"><span>Official</span><span class="num" id="cOff"></span></div><div class="kv"><span>Difference</span><span class="num G" id="cDiff"></span></div></div>
   <div class="bal">
     <div class="lbl"><span>Ladle reading vs expected</span><em class="num" id="cGap"></em></div>
     <div class="bar"><div class="g" id="bG"></div></div><div class="scale"><span>−1 t</span><span>expected</span><span>+1 t</span></div>
@@ -820,13 +820,13 @@ function live(t, yard, fill) {
   if (done) {
     p.textContent = st[0]; p.style.setProperty('--c', st[1]); bal.style.setProperty('--c', st[1]);
     tween(d.m[1]);
-    $('cOff').textContent = d.m[0];
+    $('cOff').textContent = d.m[0]; $('cDiff').textContent = d.m[0] === d.m[1] ? '0' : `−${d.m[0] - d.m[1]}`;
     $('cGap').textContent = gap === 0 ? 'on target' : minus(gap) + ' kg';
     const w = Math.min(1, Math.abs(gap) / 1000) * 50; // deviation meter centred on the expected liquid, ±1 t full scale
     $('bG').style.left = (gap < 0 ? 50 - w : 50) + '%'; $('bG').style.width = Math.max(w, .8) + '%';
   } else {
     p.textContent = 'In progress'; p.style.setProperty('--c', 'var(--ink2)');
-    cancelAnimationFrame(raf); shown = null; $('cMam').innerHTML = '<span style="opacity:.14">0000</span>'; $('cOff').textContent = '—';
+    cancelAnimationFrame(raf); shown = null; $('cMam').innerHTML = '<span style="opacity:.14">0000</span>'; $('cOff').textContent = '—'; $('cDiff').textContent = '—';
     $('cGap').textContent = 'pending'; bal.style.setProperty('--c', 'var(--ink2)');
     $('bG').style.left = '50%'; $('bG').style.width = '0%';
   }
