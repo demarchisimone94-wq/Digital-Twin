@@ -100,7 +100,7 @@ const soft = canvasTex(128, 128, (g, w, h) => { const r = g.createRadialGradient
 const stage = document.getElementById('stage'), canvas = document.getElementById('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.enabled = false; // no real-time shadow maps: on many GPUs they shimmered and made the floor look liquid; soft contact shadows below replace them renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b0b0e); scene.fog = new THREE.Fog(0x0b0b0e, 34, 80);
 const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new THREE.RoomEnvironment(), .04).texture;
 const camera = new THREE.PerspectiveCamera(34, 2, .1, 140); window.__cam = camera;
@@ -142,6 +142,7 @@ const glow2 = new THREE.PointLight(0xff8a30, 0, 10, 2); glow2.position.set(7.7, 
 
 /* ---------- floor and hall ---------- */
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), mConc); floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
+const blob = (parent, x, z, sx, sz, o = .6) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: soft, color: 0x000000, transparent: true, opacity: o, depthWrite: false })); m.rotation.x = -Math.PI/2; m.scale.set(sx, sz, 1); m.position.set(x, .006, z); m.renderOrder = 1; parent.add(m); return m; }; // fixed soft shadow under a machine
 const ring = new THREE.Mesh(new THREE.RingGeometry(7.6, 7.78, 96), mYellow); ring.rotation.x = -Math.PI/2; ring.position.y = .012; scene.add(ring);
 for (const z of [-1.15, 1.15]) add(scene, new THREE.BoxGeometry(20, .12, .22), STD(0x55585e, .4, .9), 13.5, .06, z);
 const hallCols = [];
@@ -153,7 +154,7 @@ add(crane, new THREE.BoxGeometry(130, 1.1, 1.1), STD(0x3a3d44, .5, .8), 18, 0, 0
 const trolley = add(crane, new THREE.BoxGeometry(2.6, 1, 2), STD(0x6a5a2a, .6, .6), 0, -1, 0);
 
 /* ---------- furnace ---------- */
-const furnLift = new THREE.Group(); scene.add(furnLift); // mix planner: the furnace leaves the plant and comes to the viewer
+const furnLift = new THREE.Group(); scene.add(furnLift); const furnBlob = blob(scene, 0, 0, 15, 12, .65); // mix planner: the furnace leaves the plant and comes to the viewer
 const liftK = new Spring(0, .95, 1), _fw = new THREE.Vector3(), _fc = new THREE.Vector3(0, 2.6, 0);
 const pivot = new THREE.Group(); pivot.position.set(3.4, 1, 0); furnLift.add(pivot);
 const body = new THREE.Group(); body.position.set(-3.4, -1, 0); pivot.add(body);
@@ -250,7 +251,7 @@ for (let i = 0; i < 26; i++) { const a = rnd()*6.28, r = rnd()*1.0; add(bucket, 
 const chain = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([[1.2, .8, 0], [0, 2.7, 0], [-1.2, .8, 0], [0, 2.7, 0], [0, .8, 1.2], [0, 2.7, 0], [0, .8, -1.2], [0, 2.7, 0]].map(p => new THREE.Vector3(...p))), new THREE.LineBasicMaterial({ color: 0x8a8d94 })); chain.position.y = -2.7; hook.add(chain);
 
 /* ladle on its car */
-const carG = new THREE.Group(); carG.position.set(7.7, 0, 0); scene.add(carG);
+const carG = new THREE.Group(); carG.position.set(7.7, 0, 0); scene.add(carG); blob(carG, 0, 0, 6.5, 5.5, .55);
 const ladleG = new THREE.Group(); ladleG.position.set(7.7, 0, 0); scene.add(ladleG);
 add(carG, new THREE.BoxGeometry(4.4, .7, 3.6), STD(0x2b2824, .75, .5), 0, .75, 0);
 const wheels = [];
@@ -275,7 +276,7 @@ const BAR_OK = new THREE.Color(.3, 1.1, .5), BAR_DIM = new THREE.Color(.05, .05,
 const scaleTick = add(disp, new THREE.PlaneGeometry(.02, .36), new THREE.MeshBasicMaterial({ color: 0xffffff }), 0, 0, .115); scaleTick.castShadow = false;
 /* scrap-yard scale: the bucket is weighed here before the crane lifts it */
 const YARD_X = -11.5;
-const yardG = new THREE.Group(); yardG.position.set(YARD_X, 0, 0); scene.add(yardG);
+const yardG = new THREE.Group(); yardG.position.set(YARD_X, 0, 0); scene.add(yardG); blob(yardG, 0, 0, 7, 7, .45);
 add(yardG, new THREE.BoxGeometry(3.4, .12, 3.4), STD(0x3b3e44, .45, .85, { map: steel }), 0, .06, 0);
 for (const [x, z] of [[-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) add(yardG, new THREE.CylinderGeometry(.14, .18, .1, 16), mClamp, x, .14, z);
 const yHatch = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8), STD(0xc9a21e, .7, .1)); yHatch.rotation.x = -Math.PI/2; yHatch.position.y = .03; yardG.add(yHatch);
@@ -334,7 +335,7 @@ for (const z of [-1.2, 1.2]) add(caster, new THREE.BoxGeometry(.5, 3.2, .5), mTo
 add(caster, new THREE.BoxGeometry(.7, .5, 3.1), mTower, SHEAR_X, 3.4, 0);
 const blade = add(caster, new THREE.BoxGeometry(.18, 1.2, 1.8), STD(0xb7bcc3, .35, .9), SHEAR_X, 2.8, 0);
 // bar scale on the table
-const barScale = new THREE.Group(); barScale.position.set(SCALE_X, 0, 0); caster.add(barScale);
+const barScale = new THREE.Group(); barScale.position.set(SCALE_X, 0, 0); caster.add(barScale); blob(caster, CX, 0, 14, 12, .55); blob(caster, RACK_X, 0, 9, 9, .45);
 add(barScale, new THREE.BoxGeometry(5.4, .1, 3.0), STD(0x3b3e44, .45, .85, { map: steel }), 0, .05, 0);
 for (const [x, z] of [[-2.5, -1.3], [2.5, -1.3], [-2.5, 1.3], [2.5, 1.3]]) add(barScale, new THREE.CylinderGeometry(.14, .18, .1, 16), mClamp, x, .12, z);
 const bsHatch = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 3.4), STD(0xc9a21e, .7, .1)); bsHatch.rotation.x = -Math.PI/2; bsHatch.position.y = .03; barScale.add(bsHatch);
@@ -486,7 +487,7 @@ function frame(dt) {
   scene.fog.near = r*1.1; scene.fog.far = r*2.6; // fog keeps the same feel at every zoom
   const px = pan.x.step(dt), pz = pan.z.step(dt);
   camera.position.set(cxv + px + r*Math.sin(p)*Math.sin(a), Math.max(1.2, 3.6 + r*Math.cos(p)), pz + r*Math.sin(p)*Math.cos(a)); camera.lookAt(cxv + px, 3.6, pz); // camera never goes below the floor
-  const lk = liftK.step(dt); camera.getWorldDirection(_fw); furnLift.position.copy(camera.position).addScaledVector(_fw, 23).sub(_fc).multiplyScalar(lk); furnLift.rotation.y = lk*.5;
+  const lk = liftK.step(dt); furnBlob.material.opacity = .65*(1 - lk); camera.getWorldDirection(_fw); furnLift.position.copy(camera.position).addScaledVector(_fw, 23).sub(_fc).multiplyScalar(lk); furnLift.rotation.y = lk*.5;
   for (const c of hallCols) c.visible = Math.hypot(camera.position.x - c.position.x, camera.position.z - c.position.z) > 7; // a hall column next to the lens would fill the screen with black
     if (!sideW && !planMode) { const ins = document.querySelector('.insp'); sideW = ins && innerWidth > 860 ? ins.getBoundingClientRect().right : 0; } // the sidebar arrives after the scene
   const vo = viewK.step(dt)*sideW/2; if (vo > .5) camera.setViewOffset(VW, VH, -vo, 0, VW, VH); else camera.clearViewOffset();
