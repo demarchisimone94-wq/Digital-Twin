@@ -78,7 +78,7 @@ const PH = [ {id:'carica',label:'Charging',from:0,to:7}, {id:'fusione',label:'Me
 const END = 75;
 function model(t) {
   const phase = PH.find(p => t < p.to) || PH.at(-1);
-  const charged = phase.id === 'carica' ? ease(clamp(t/6.2)) : 1;
+  const charged = phase.id === 'carica' ? ease(clamp((t - 3.4)/2.2)) : 1;
   const m = clamp((t - 7)/40), c = clamp((t - 47)/8);
   const heat = t < 7 ? .15 + .1*t/7 : t < 47 ? .25 + .75*m : 1 - .08*c;
   return { phase, charged, m, c, heat };
