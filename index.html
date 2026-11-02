@@ -78,7 +78,7 @@ const PH = [ {id:'carica',label:'Charging',from:0,to:7}, {id:'fusione',label:'Me
 const END = 75;
 function model(t) {
   const phase = PH.find(p => t < p.to) || PH.at(-1);
-  const charged = phase.id === 'carica' ? ease(clamp((t - 3.4)/2.2)) : 1;
+  const charged = phase.id === 'carica' ? ease(clamp((t - 3.9)/2.0)) : 1;
   const m = clamp((t - 7)/40), c = clamp((t - 47)/8);
   const heat = t < 7 ? .15 + .1*t/7 : t < 47 ? .25 + .75*m : 1 - .08*c;
   return { phase, charged, m, c, heat };
@@ -397,9 +397,9 @@ function applyTargets() {
   S.eY.forEach(s => s.t = tipY + 4.7);
   if (M.phase.id !== 'carica') { S.bx.t = -17; S.by.t = 17; S.br.t = 0; }
   else if (t < .7) { S.bx.t = YARD_X; S.by.t = 9.3; S.br.t = 0; } // crane brings the bucket over the scale
-  else if (t < 1.8) { S.bx.t = YARD_X; S.by.t = 3.83; S.br.t = 0; }
-  else if (t < 3) { S.bx.t = 0; S.by.t = 9.3; S.br.t = 0; }
-  else if (t < 5.4) { S.bx.t = 0; S.by.t = 9.3; S.br.t = 1.55; }
+  else if (t < 2.6) { S.bx.t = YARD_X; S.by.t = 3.83; S.br.t = 0; }
+  else if (t < 3.6) { S.bx.t = 0; S.by.t = 9.3; S.br.t = 0; }
+  else if (t < 6) { S.bx.t = 0; S.by.t = 9.3; S.br.t = 1.55; }
   else { S.bx.t = -17; S.by.t = 17; S.br.t = 0; }
   S.car.t = t >= 54.85 ? 9.5 : 0; // full ladle leaves on its car towards the caster
 }
@@ -410,7 +410,7 @@ function frame(dt) {
   roofPivot.rotation.y = roof; roofG.position.y = 4.78 + lift*.5 + (M.phase.id === 'fusione' ? .12 : 0);
   pivot.rotation.z = S.tilt.step(dt);
   elec.forEach((g, i) => g.position.y = S.eY[i].step(dt));
-  hook.position.set(S.bx.step(dt), S.by.step(dt), 0); bucket.rotation.z = -S.br.step(dt); trolley.position.x = hook.position.x; trolley.position.y = -1;
+  hook.position.set(S.bx.step(dt), S.by.step(dt), 0); bucket.rotation.z = -S.br.step(dt); if (M.phase.id !== 'carica' || t < .05) TW.landT = 99; else if (TW.landT === 99 && Math.abs(hook.position.x - YARD_X) < .3 && hook.position.y < 3.95) TW.landT = t; // the moment the bucket rests on the scale trolley.position.x = hook.position.x; trolley.position.y = -1;
   // levels
   const lvl = M.phase.id === 'colata' ? 1.75 + 2.0*(1 - M.c) : 1.75 + 2.0*(M.charged*M.m);
   bath.position.y = lvl; bath.visible = M.phase.id === 'taglio' ? false : (M.phase.id === 'colata' ? M.c < .97 : M.charged*M.m > .015);
@@ -962,7 +962,7 @@ function render() {
 let lastDone = null;
 function live(t, yard, fill) {
   const d = C[cur], st = ST[d.s], gap = d.l - d.a, done = t >= 72.5, tapping = t >= 47.2;
-  $('cC').textContent = t > .35 ? kg(Math.round(d.c*yard/10)*10) : '—';
+  $('cC').textContent = yard > 0 ? kg(Math.round(d.c*yard/10)*10) : '—';
   $('cA').textContent = done ? kg(d.a) : '—'; // the expected liquid comes from the bars, so it exists only once the bar scale has finished
   const lf = t >= 55 ? 1 : fill; // once the ladle leaves the scale its reading is final, even while it empties into the caster
   $('cL').textContent = tapping ? kg(done ? d.l : Math.min(d.l, Math.round(d.a*lf/10)*10)) : '—';
@@ -1012,9 +1012,9 @@ $('back').addEventListener('click', () => { const T = window.__twin; if (T.overv
     R = $('stage').getBoundingClientRect(); IR = document.querySelector('.insp').getBoundingClientRect().right;
     const d = C[cur], t = T.t;
     // yard scale: the bucket sits on it in the first ~1.6 min of carica
-    const yard = clamp01((t - .35)/1.2);
+    const land = T.landT ?? 1, yard = t < 7 ? clamp01((t - land)/1.2) : 1; // counts only once the bucket rests on the scale
     live(t, yard, T.lf);
-    show($('t1'), t > .35); $('t1v').textContent = kg(Math.round(d.c*yard/10)*10);
+    show($('t1'), t >= land); $('t1v').textContent = kg(Math.round(d.c*yard/10)*10);
     // tapping scale: reads the ladle as it fills, then the final reading with the expected value
     const tap = t >= 47.2, fill = t < 55 ? T.lf : 1;
     // what the scale actually registered for this colata: it stops reading at d.l
