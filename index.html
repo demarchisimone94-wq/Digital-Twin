@@ -500,11 +500,12 @@ const az = new Spring(HOME.az, .45, 1), po = new Spring(HOME.po, .4, 1), rad = n
 const PO_MIN = .45, PO_MAX = 1.36, R_MIN = 14, R_MAX = 70;
 const rubber = (o, dim = 1.2, k = .55) => (o*dim*k)/(dim + k*Math.abs(o));
 let drag = null, raw = { a: HOME.az, p: HOME.po }, hist = [], vel = { a: 0, p: 0 }; const pointers = new Map(); let pinch0 = 0, r0 = 0;
-let down0 = null;
-stage.addEventListener('pointerdown', e => { down0 = { x: e.clientX, y: e.clientY }; stage.setPointerCapture(e.pointerId); pointers.set(e.pointerId, e); stage.classList.add('grabbing'); vel = { a: 0, p: 0 }; raw = { a: az.x, p: po.x }; hist = []; az.v = po.v = 0; az.t = az.x; po.t = po.x; if (pointers.size === 2) { const [p1, p2] = [...pointers.values()]; pinch0 = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY); r0 = rad.x; } drag = { x: e.clientX, y: e.clientY }; });
+let down0 = null, mid0 = null;
+document.addEventListener('gesturestart', e => e.preventDefault()); // iOS: our pinch, not the page's
+stage.addEventListener('pointerdown', e => { down0 = { x: e.clientX, y: e.clientY }; try { stage.setPointerCapture(e.pointerId); } catch (_) {} pointers.set(e.pointerId, e); stage.classList.add('grabbing'); vel = { a: 0, p: 0 }; raw = { a: az.x, p: po.x }; hist = []; az.v = po.v = 0; az.t = az.x; po.t = po.x; if (pointers.size === 2) { const [p1, p2] = [...pointers.values()]; pinch0 = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY); r0 = rad.x; } drag = { x: e.clientX, y: e.clientY }; });
 stage.addEventListener('pointermove', e => {
   if (!pointers.has(e.pointerId)) return; pointers.set(e.pointerId, e);
-  if (pointers.size === 2) { const [p1, p2] = [...pointers.values()]; rad.set(clamp(r0*pinch0/Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY), R_MIN, R_MAX)); return; }
+  if (pointers.size === 2) { const [p1, p2] = [...pointers.values()]; rad.set(clamp(r0*pinch0/Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY), R_MIN, R_MAX)); const mx = (p1.clientX + p2.clientX)/2, my = (p1.clientY + p2.clientY)/2; if (mid0) panBy(-(mx - mid0.x)*1.6, -(my - mid0.y)*1.6); mid0 = { x: mx, y: my }; return; } // two fingers: pinch zooms, sliding them moves along the plant
   if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY };
   if (e.shiftKey || e.buttons === 2) { panBy(-dx*1.6, -dy*1.6); return; }
   raw.a -= dx*.0055; raw.p -= dy*.0055; const c = clamp(raw.p, PO_MIN, PO_MAX); az.set(raw.a); po.set(c + rubber(raw.p - c, .25));
@@ -512,7 +513,7 @@ stage.addEventListener('pointermove', e => {
 });
 function release(e) {
   if (down0 && Math.hypot(e.clientX - down0.x, e.clientY - down0.y) < 6) { if (!planMode && onFurnace(e)) goPlan(); else if (overview) pickStation(e); }
-  pointers.delete(e.pointerId); if (pointers.size) return; stage.classList.remove('grabbing'); drag = null;
+  pointers.delete(e.pointerId); mid0 = null; if (pointers.size) { drag = null; return; } // lifting one of two fingers must not turn into a rotation jump stage.classList.remove('grabbing'); drag = null;
   if (hist.length > 1) { const f0 = hist[0], l = hist.at(-1), d = (l.t - f0.t)/1000; if (d > 0 && performance.now() - l.t < 80) { vel.a = (l.a - f0.a)/d; vel.p = (l.p - f0.p)/d; } }
   if (reduce) vel = { a: 0, p: 0 };
   const proj = v => (v/1000)*.99/(1 - .99);
