@@ -263,11 +263,12 @@ add(ladleG, new THREE.CylinderGeometry(1.25, 1.25, .1, 40), STD(0x1a1512, .9, 0)
 const lrim = add(ladleG, new THREE.TorusGeometry(1.58, .1, 10, 60), mPipe, 0, 2.85, 0); lrim.rotation.x = Math.PI/2; lrim.receiveShadow = false;
 for (const z of [-1.75, 1.75]) add(ladleG, new THREE.CylinderGeometry(.16, .16, .6, 14), mPipe, 0, 2.3, z).rotation.x = Math.PI/2; // trunnions: two stubs on the shell, not a rod through the steel
 for (const z of [-1.8, 1.8]) add(ladleG, new THREE.BoxGeometry(.5, .8, .2), mDark, 0, 2.5, z);
+const hazardMat = (() => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); g.fillStyle = '#c9a21e'; g.fillRect(0, 0, 256, 256); g.strokeStyle = '#141414'; g.lineWidth = 34; for (let i = -256; i < 512; i += 96) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 256, 256); g.stroke(); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); t.anisotropy = 8; t.encoding = THREE.sRGBEncoding; return new THREE.MeshStandardMaterial({ map: t, roughness: .7, metalness: .1, envMapIntensity: .55 }); })(); // painted hazard stripes, fixed in the texture
 /* tapping scale under the ladle car: weigh platform, load cells, display post */
 const scaleG = new THREE.Group(); scaleG.position.set(7.7, 0, 0); scene.add(scaleG);
 add(scaleG, new THREE.BoxGeometry(5.2, .08, 4.2), STD(0x3b3e44, .45, .85, { map: steel }), 0, .04, 0);
 for (const [x, z] of [[-2.3, -1.8], [2.3, -1.8], [-2.3, 1.8], [2.3, 1.8]]) add(scaleG, new THREE.CylinderGeometry(.16, .2, .1, 16), mClamp, x, .1, z);
-const hatch = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.6), STD(0xc9a21e, .7, .1, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); hatch.rotation.x = -Math.PI/2; hatch.position.y = .02; scaleG.add(hatch);
+const hatch = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.6), hazardMat); hatch.rotation.x = -Math.PI/2; hatch.position.y = .02; scaleG.add(hatch);
 add(scaleG, new THREE.BoxGeometry(.18, 3.0, .18), mDark, 2.9, 1.5, 2.5);
 const disp = new THREE.Group(); disp.position.set(2.9, 3.2, 2.5); disp.rotation.y = .7; disp.scale.setScalar(2); scaleG.add(disp);
 add(disp, new THREE.BoxGeometry(.9, .6, .2), STD(0x15171a, .4, .5), 0, 0, 0);
@@ -280,7 +281,7 @@ const YARD_X = -11.5;
 const yardG = new THREE.Group(); yardG.position.set(YARD_X, 0, 0); scene.add(yardG); blob(yardG, 0, 0, 7, 7, .45);
 add(yardG, new THREE.BoxGeometry(3.4, .12, 3.4), STD(0x3b3e44, .45, .85, { map: steel }), 0, .06, 0);
 for (const [x, z] of [[-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) add(yardG, new THREE.CylinderGeometry(.14, .18, .1, 16), mClamp, x, .14, z);
-const yHatch = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8), STD(0xc9a21e, .7, .1, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); yHatch.rotation.x = -Math.PI/2; yHatch.position.y = .02; yardG.add(yHatch);
+const yHatch = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8), hazardMat); yHatch.rotation.x = -Math.PI/2; yHatch.position.y = .02; yardG.add(yHatch);
 add(yardG, new THREE.BoxGeometry(.18, 3.0, .18), mDark, -1.9, 1.5, -1.9);
 const ydisp = new THREE.Group(); ydisp.position.set(-1.9, 3.2, -1.9); ydisp.rotation.y = .7; ydisp.scale.setScalar(2); yardG.add(ydisp);
 add(ydisp, new THREE.BoxGeometry(.9, .6, .2), STD(0x15171a, .4, .5), 0, 0, 0);
@@ -339,7 +340,7 @@ const blade = add(caster, new THREE.BoxGeometry(.18, 1.2, 1.8), STD(0xb7bcc3, .3
 const barScale = new THREE.Group(); barScale.position.set(SCALE_X, 0, 0); caster.add(barScale); blob(caster, CX, 0, 14, 12, .55); blob(caster, RACK_X, 0, 9, 9, .45);
 add(barScale, new THREE.BoxGeometry(5.4, .1, 3.0), STD(0x3b3e44, .45, .85, { map: steel }), 0, .05, 0);
 for (const [x, z] of [[-2.5, -1.3], [2.5, -1.3], [-2.5, 1.3], [2.5, 1.3]]) add(barScale, new THREE.CylinderGeometry(.14, .18, .1, 16), mClamp, x, .12, z);
-const bsHatch = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 3.4), STD(0xc9a21e, .7, .1, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); bsHatch.rotation.x = -Math.PI/2; bsHatch.position.y = .02; barScale.add(bsHatch);
+const bsHatch = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 3.4), hazardMat); bsHatch.rotation.x = -Math.PI/2; bsHatch.position.y = .02; barScale.add(bsHatch);
 add(barScale, new THREE.BoxGeometry(.18, 3.0, .18), mDark, -2.6, 1.5, -2.0);
 const bdisp = new THREE.Group(); bdisp.position.set(-2.6, 3.2, -2.0); bdisp.rotation.y = -.6; bdisp.scale.setScalar(2); barScale.add(bdisp);
 add(bdisp, new THREE.BoxGeometry(.9, .6, .2), STD(0x15171a, .4, .5), 0, 0, 0);
