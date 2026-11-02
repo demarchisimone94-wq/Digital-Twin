@@ -350,7 +350,7 @@ const bBar = add(bdisp, new THREE.PlaneGeometry(.66, .3), new THREE.MeshBasicMat
 for (const z of [-1.2, 1.2]) add(caster, new THREE.BoxGeometry(.3, .9, .3), mTower, RACK_X + 1.5, .45, z);
 add(caster, new THREE.BoxGeometry(.3, .3, 3), mTower, RACK_X + 1.5, .95, 0);
 // cut bars
-const NB = 4, TCUT = [.60, .65, .70, .75], bars = [];
+const NB = 4, TCUT = [.64, .68, .72, .76], bars = [];
 // cooling bed (walking rakes) beside the run-out, and a magnet crane above it
 for (let z = -2.6; z <= 2.6; z += .65) add(caster, new THREE.BoxGeometry(BIL_LEN + 1, .12, .14), mTower, RACK_X, CY - .32, z);
 for (const z of [-2.8, 2.8]) for (const dx of [-1.8, 1.8]) add(caster, new THREE.BoxGeometry(.25, CY, .25), mTower, RACK_X + dx, CY/2 - .2, z);
@@ -432,12 +432,12 @@ function frame(dt) {
   scaleTick.position.x = -.33 + .66*w; scaleTick.visible = w > .02 && w < .99;
   // casting: strand grows from the mold along the curved path, shear cuts bars that ride to the scale
   const V = MOLD_Y - ARC_Y, AL = Math.PI/2*CR, H = SHEAR_X - HX, head = (V + AL + H)*clamp((tau - .46)/.14);
-  const tail = (V + AL + H)*clamp((tau - .64)/.11); // once the ladle is empty the strand's tail runs down the machine, so every kg ends up cut into bars
+  const tail = (V + AL + H)*clamp((tau - .64)/.12); // once the ladle is empty the strand's tail runs down the machine, so every kg ends up cut into bars
   const v0 = Math.min(tail, V), vL = Math.max(0, Math.min(head, V) - v0); strandV.visible = vL > .01; strandV.position.set(CX, MOLD_Y - v0 - vL/2, 0); strandV.scale.y = Math.max(.001, vL);
   sprays.forEach(sp => sp.visible = head > sp.userData.u + .2 && tau < .76);
   arcSeg.forEach((m, i) => m.visible = head >= V + (i + .5)*AL/ARC_N && tail < V + (i + .5)*AL/ARC_N);
   const h0 = clamp(tail - V - AL, 0, H), hL = Math.max(0, clamp(head - V - AL, 0, H) - h0); strandH.visible = hL > .01; strandH.position.set(HX + h0 + hL/2, CY, 0); strandH.scale.y = Math.max(.001, hL);
-  const kk = Math.floor((tau - .60)/.05), ph = (tau - .60 - kk*.05)/.05, stub = tau >= .60 && tau < .75 ? ph*BIL_LEN : 0;
+  const kk = Math.floor((tau - .60)/.04), ph = (tau - .60 - kk*.04)/.04, stub = tau >= .60 && tau < .76 ? ph*BIL_LEN : 0;
   strandStub.visible = stub > .02; strandStub.position.set(SHEAR_X + stub/2, CY, 0); strandStub.scale.y = Math.max(.001, stub);
   streamTun.visible = tau >= .42 && tau < .62; streamTun.position.set(CX, 12.6, 0); streamTun.scale.set(1, .5, 1);
   // magnet crane over the cooling bed: down, grab the bundle, lift, carry away
@@ -449,7 +449,7 @@ function frame(dt) {
   let dip = 0, weighed = 0;
   bars.forEach((m, k) => {
     const u = clamp((tau - TCUT[k])/.08); m.visible = tau >= TCUT[k] && tau < .995;
-    const x0 = SHEAR_X + BIL_LEN/2 + .1, x = x0 + (RACK_X - x0)*cs(u);
+    const x0 = SHEAR_X + BIL_LEN/2, x = x0 + (RACK_X - x0)*cs(u);
     // on the cooling bed the bars walk sideways and cool down, then the magnet crane takes them to the store
     const bedZ = (-.75 + k*.5)*cs(clamp((tau - TCUT[k] - .08)/.1)), gone = magnetCarry;
     m.position.set(x, CY + gone.y, bedZ + gone.z); m.material.color.lerpColors(HOT, COLD, clamp((tau - TCUT[k])/.2));
