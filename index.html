@@ -103,8 +103,9 @@ renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
 renderer.shadowMap.enabled = false; // no real-time shadow maps: on many GPUs they shimmered and made the floor look liquid; soft contact shadows below replace them renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b0b0e); scene.fog = new THREE.Fog(0x0b0b0e, 34, 80);
 const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new THREE.RoomEnvironment(), .04).texture;
-const camera = new THREE.PerspectiveCamera(34, 2, .1, 140); window.__cam = camera;
-const composer = new THREE.EffectComposer(renderer);
+const camera = new THREE.PerspectiveCamera(34, 2, .4, 140);
+const msRT = renderer.capabilities.isWebGL2 ? new THREE.WebGLMultisampleRenderTarget(1, 1, { format: THREE.RGBAFormat, type: THREE.HalfFloatType }) : undefined; if (msRT) msRT.samples = 4; // antialiasing inside the post chain: thin edges (rocker beams, scale hatching) no longer crawl as the camera moves
+const composer = new THREE.EffectComposer(renderer, msRT);
 composer.addPass(new THREE.RenderPass(scene, camera));
 const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(512, 512), .5, .45, 1.5); composer.addPass(bloom);
 const grade = new THREE.ShaderPass({
@@ -142,7 +143,7 @@ const glow2 = new THREE.PointLight(0xff8a30, 0, 10, 2); glow2.position.set(7.7, 
 
 /* ---------- floor and hall ---------- */
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), mConc); floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
-const blob = (parent, x, z, sx, sz, o = .6) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: soft, color: 0x000000, transparent: true, opacity: o, depthWrite: false })); m.rotation.x = -Math.PI/2; m.scale.set(sx, sz, 1); m.position.set(x, .006, z); m.renderOrder = 1; parent.add(m); return m; }; // fixed soft shadow under a machine
+const blob = (parent, x, z, sx, sz, o = .6) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: soft, color: 0x000000, transparent: true, opacity: o, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); m.rotation.x = -Math.PI/2; m.scale.set(sx, sz, 1); m.position.set(x, .01, z); m.renderOrder = 1; parent.add(m); return m; }; // fixed soft shadow under a machine
 const ring = new THREE.Mesh(new THREE.RingGeometry(7.6, 7.78, 96), mYellow); ring.rotation.x = -Math.PI/2; ring.position.y = .012; scene.add(ring);
 for (const z of [-1.15, 1.15]) add(scene, new THREE.BoxGeometry(20, .12, .22), STD(0x55585e, .4, .9), 13.5, .06, z);
 const hallCols = [];
@@ -173,7 +174,7 @@ for (const y of [3.15, 3.45, 3.75]) { const r = add(body, new THREE.CylinderGeom
 const spout = add(body, new THREE.BoxGeometry(2.0, .28, 1.2), mPanel, 4.4, 4.45, 0); spout.rotation.z = -.2;
 add(body, new THREE.BoxGeometry(2.0, .45, .14), mPanel, 4.4, 4.62, .62).rotation.z = -.2; add(body, new THREE.BoxGeometry(2.0, .45, .14), mPanel, 4.4, 4.62, -.62).rotation.z = -.2;
 const tip = new THREE.Object3D(); tip.position.set(5.35, 4.25, 0); body.add(tip);
-for (const z of [-2.5, 2.5]) add(scene, new THREE.BoxGeometry(10, .3, 1), mConc, 0, .15, z);
+for (const z of [-2.5, 2.5]) add(scene, new THREE.BoxGeometry(10, .27, 1), STD(0x8d8c88, .95, 0), 0, .135, z); // top kept just under the rocker beams: two faces on the same plane flickered like a saw blade
 
 const bathMat = new THREE.ShaderMaterial({
   uniforms: { time: { value: 0 }, heat: { value: .3 } },
@@ -266,7 +267,7 @@ for (const z of [-1.8, 1.8]) add(ladleG, new THREE.BoxGeometry(.5, .8, .2), mDar
 const scaleG = new THREE.Group(); scaleG.position.set(7.7, 0, 0); scene.add(scaleG);
 add(scaleG, new THREE.BoxGeometry(5.2, .08, 4.2), STD(0x3b3e44, .45, .85, { map: steel }), 0, .04, 0);
 for (const [x, z] of [[-2.3, -1.8], [2.3, -1.8], [-2.3, 1.8], [2.3, 1.8]]) add(scaleG, new THREE.CylinderGeometry(.16, .2, .1, 16), mClamp, x, .1, z);
-const hatch = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.6), STD(0xc9a21e, .7, .1)); hatch.rotation.x = -Math.PI/2; hatch.position.y = .03; scaleG.add(hatch);
+const hatch = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.6), STD(0xc9a21e, .7, .1, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); hatch.rotation.x = -Math.PI/2; hatch.position.y = .02; scaleG.add(hatch);
 add(scaleG, new THREE.BoxGeometry(.18, 3.0, .18), mDark, 2.9, 1.5, 2.5);
 const disp = new THREE.Group(); disp.position.set(2.9, 3.2, 2.5); disp.rotation.y = .7; disp.scale.setScalar(2); scaleG.add(disp);
 add(disp, new THREE.BoxGeometry(.9, .6, .2), STD(0x15171a, .4, .5), 0, 0, 0);
@@ -279,7 +280,7 @@ const YARD_X = -11.5;
 const yardG = new THREE.Group(); yardG.position.set(YARD_X, 0, 0); scene.add(yardG); blob(yardG, 0, 0, 7, 7, .45);
 add(yardG, new THREE.BoxGeometry(3.4, .12, 3.4), STD(0x3b3e44, .45, .85, { map: steel }), 0, .06, 0);
 for (const [x, z] of [[-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) add(yardG, new THREE.CylinderGeometry(.14, .18, .1, 16), mClamp, x, .14, z);
-const yHatch = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8), STD(0xc9a21e, .7, .1)); yHatch.rotation.x = -Math.PI/2; yHatch.position.y = .03; yardG.add(yHatch);
+const yHatch = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8), STD(0xc9a21e, .7, .1, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); yHatch.rotation.x = -Math.PI/2; yHatch.position.y = .02; yardG.add(yHatch);
 add(yardG, new THREE.BoxGeometry(.18, 3.0, .18), mDark, -1.9, 1.5, -1.9);
 const ydisp = new THREE.Group(); ydisp.position.set(-1.9, 3.2, -1.9); ydisp.rotation.y = .7; ydisp.scale.setScalar(2); yardG.add(ydisp);
 add(ydisp, new THREE.BoxGeometry(.9, .6, .2), STD(0x15171a, .4, .5), 0, 0, 0);
@@ -338,7 +339,7 @@ const blade = add(caster, new THREE.BoxGeometry(.18, 1.2, 1.8), STD(0xb7bcc3, .3
 const barScale = new THREE.Group(); barScale.position.set(SCALE_X, 0, 0); caster.add(barScale); blob(caster, CX, 0, 14, 12, .55); blob(caster, RACK_X, 0, 9, 9, .45);
 add(barScale, new THREE.BoxGeometry(5.4, .1, 3.0), STD(0x3b3e44, .45, .85, { map: steel }), 0, .05, 0);
 for (const [x, z] of [[-2.5, -1.3], [2.5, -1.3], [-2.5, 1.3], [2.5, 1.3]]) add(barScale, new THREE.CylinderGeometry(.14, .18, .1, 16), mClamp, x, .12, z);
-const bsHatch = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 3.4), STD(0xc9a21e, .7, .1)); bsHatch.rotation.x = -Math.PI/2; bsHatch.position.y = .03; barScale.add(bsHatch);
+const bsHatch = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 3.4), STD(0xc9a21e, .7, .1, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); bsHatch.rotation.x = -Math.PI/2; bsHatch.position.y = .02; barScale.add(bsHatch);
 add(barScale, new THREE.BoxGeometry(.18, 3.0, .18), mDark, -2.6, 1.5, -2.0);
 const bdisp = new THREE.Group(); bdisp.position.set(-2.6, 3.2, -2.0); bdisp.rotation.y = -.6; bdisp.scale.setScalar(2); barScale.add(bdisp);
 add(bdisp, new THREE.BoxGeometry(.9, .6, .2), STD(0x15171a, .4, .5), 0, 0, 0);
