@@ -103,7 +103,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
 renderer.shadowMap.enabled = false; // no real-time shadow maps: on many GPUs they shimmered and made the floor look liquid; soft contact shadows below replace them renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b0b0e); scene.fog = new THREE.Fog(0x0b0b0e, 34, 80);
 const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new THREE.RoomEnvironment(), .04).texture;
-const camera = new THREE.PerspectiveCamera(34, 2, .4, 140);
+const camera = new THREE.PerspectiveCamera(34, 2, .4, 140); window.__cam = camera;
 const msRT = renderer.capabilities.isWebGL2 ? new THREE.WebGLMultisampleRenderTarget(1, 1, { format: THREE.RGBAFormat, type: THREE.HalfFloatType }) : undefined; if (msRT) msRT.samples = 4; // antialiasing inside the post chain: thin edges (rocker beams, scale hatching) no longer crawl as the camera moves
 const composer = new THREE.EffectComposer(renderer, msRT);
 composer.addPass(new THREE.RenderPass(scene, camera));
