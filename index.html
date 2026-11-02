@@ -135,7 +135,7 @@ const add = (parent, geo, mat, x = 0, y = 0, z = 0) => { const m = sh(new THREE.
 /* ---------- lights ---------- */
 scene.add(new THREE.HemisphereLight(0x7080a8, 0x15110d, .32));
 const key = new THREE.DirectionalLight(0xdfe6f5, .95); key.position.set(12, 24, 14); key.castShadow = true;
-key.position.set(30, 30, 17.5); key.target.position.set(15, 0, 0); Object.assign(key.shadow.camera, { left: -46, right: 46, top: 34, bottom: -34, near: 1, far: 110 }); key.shadow.camera.updateProjectionMatrix(); key.shadow.mapSize.set(4096, 4096); key.shadow.bias = -.0004; key.shadow.normalBias = .04; key.shadow.radius = 4; scene.add(key, key.target); // the sun's shadow box is fixed over the whole line: a box that followed the camera made shadows crawl across the floor
+key.position.set(30, 30, 17.5); key.target.position.set(15, 0, 0); Object.assign(key.shadow.camera, { left: -34, right: 34, top: 24, bottom: -24, near: 1, far: 100 }); key.shadow.camera.updateProjectionMatrix(); key.shadow.mapSize.set(4096, 4096); key.shadow.bias = -.0004; key.shadow.normalBias = .04; key.shadow.radius = 4; scene.add(key, key.target); // the sun's shadow box is fixed over the whole line: a box that followed the camera made shadows crawl across the floor
 const rimL = new THREE.DirectionalLight(0x5a78b8, .5); rimL.position.set(-14, 10, -16); scene.add(rimL);
 const glow = new THREE.PointLight(0xff7a2a, 0, 16, 2); glow.position.set(0, 3.4, 0); scene.add(glow);
 const glow2 = new THREE.PointLight(0xff8a30, 0, 10, 2); glow2.position.set(7.7, 3, 0); scene.add(glow2);
@@ -146,9 +146,10 @@ const ring = new THREE.Mesh(new THREE.RingGeometry(7.6, 7.78, 96), mYellow); rin
 for (const z of [-1.15, 1.15]) add(scene, new THREE.BoxGeometry(20, .12, .22), STD(0x55585e, .4, .9), 13.5, .06, z);
 const hallCols = [];
 for (let x = -36; x <= 72; x += 12) { hallCols.push(add(scene, new THREE.BoxGeometry(1, 30, 1), mDark, x, 15, -24), add(scene, new THREE.BoxGeometry(.3, 30, 1.6), mDark, x, 15, -24)); }
-add(scene, new THREE.BoxGeometry(160, 1.6, 1.2), mDark, 18, 21, -24);
+const hallBeam = add(scene, new THREE.BoxGeometry(160, 1.6, 1.2), mDark, 18, 21, -24);
+for (const m of hallCols) m.castShadow = false; hallBeam.castShadow = false; // the hall's steelwork is far overhead: its long shadows made the floor look like liquid
 const crane = new THREE.Group(); crane.position.y = 21.5; scene.add(crane);
-add(crane, new THREE.BoxGeometry(130, 1.1, 1.1), STD(0x3a3d44, .5, .8), 18, 0, 0);
+add(crane, new THREE.BoxGeometry(130, 1.1, 1.1), STD(0x3a3d44, .5, .8), 18, 0, 0).castShadow = false;
 const trolley = add(crane, new THREE.BoxGeometry(2.6, 1, 2), STD(0x6a5a2a, .6, .6), 0, -1, 0);
 
 /* ---------- furnace ---------- */
