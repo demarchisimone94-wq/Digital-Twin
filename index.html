@@ -100,7 +100,7 @@ const soft = canvasTex(128, 128, (g, w, h) => { const r = g.createRadialGradient
 const stage = document.getElementById('stage'), canvas = document.getElementById('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b0b0e); scene.fog = new THREE.Fog(0x0b0b0e, 34, 80);
 const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new THREE.RoomEnvironment(), .04).texture;
 const camera = new THREE.PerspectiveCamera(34, 2, .1, 140); window.__cam = camera;
@@ -135,7 +135,7 @@ const add = (parent, geo, mat, x = 0, y = 0, z = 0) => { const m = sh(new THREE.
 /* ---------- lights ---------- */
 scene.add(new THREE.HemisphereLight(0x7080a8, 0x15110d, .32));
 const key = new THREE.DirectionalLight(0xdfe6f5, .95); key.position.set(12, 24, 14); key.castShadow = true;
-Object.assign(key.shadow.camera, { left: -17, right: 17, top: 17, bottom: -17, near: 1, far: 70 }); key.shadow.mapSize.set(4096, 4096); key.shadow.bias = -.0004; key.shadow.normalBias = .04; key.shadow.radius = 3; scene.add(key, key.target);
+key.position.set(30, 30, 17.5); key.target.position.set(15, 0, 0); Object.assign(key.shadow.camera, { left: -46, right: 46, top: 34, bottom: -34, near: 1, far: 110 }); key.shadow.camera.updateProjectionMatrix(); key.shadow.mapSize.set(4096, 4096); key.shadow.bias = -.0004; key.shadow.normalBias = .04; key.shadow.radius = 4; scene.add(key, key.target); // the sun's shadow box is fixed over the whole line: a box that followed the camera made shadows crawl across the floor
 const rimL = new THREE.DirectionalLight(0x5a78b8, .5); rimL.position.set(-14, 10, -16); scene.add(rimL);
 const glow = new THREE.PointLight(0xff7a2a, 0, 16, 2); glow.position.set(0, 3.4, 0); scene.add(glow);
 const glow2 = new THREE.PointLight(0xff8a30, 0, 10, 2); glow2.position.set(7.7, 3, 0); scene.add(glow2);
@@ -482,9 +482,6 @@ function frame(dt) {
   for (const s of smoke) { const u = s.userData; if (u.life <= 0) { s.material.opacity = 0; continue; } u.life -= dt; const k = 1 - u.life/u.max; s.position.addScaledVector(u.v, dt); s.scale.setScalar(u.s0 + k*5.5); s.material.opacity = Math.sin(Math.PI*clamp(k))*.2; }
   // camera
   const r = rad.step(dt) + S.cr.step(dt), cxv0 = S.cx.step(dt), cxv = cxv0, a = az.x, p = po.x;
-  // the sun's shadow box follows the view, so shadows are never cut off and keep their resolution
-  const sb = 9 + r*.24; key.position.set(cxv + 12, 24, 14); key.target.position.set(cxv, 0, 0);
-  if (Math.abs(key.shadow.camera.right - sb) > .5) { Object.assign(key.shadow.camera, { left: -sb, right: sb, top: sb, bottom: -sb }); key.shadow.camera.updateProjectionMatrix(); }
   scene.fog.near = r*1.1; scene.fog.far = r*2.6; // fog keeps the same feel at every zoom
   const px = pan.x.step(dt), pz = pan.z.step(dt);
   camera.position.set(cxv + px + r*Math.sin(p)*Math.sin(a), Math.max(1.2, 3.6 + r*Math.cos(p)), pz + r*Math.sin(p)*Math.cos(a)); camera.lookAt(cxv + px, 3.6, pz); // camera never goes below the floor
