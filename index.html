@@ -396,6 +396,7 @@ function applyTargets() {
   const tipY = M.phase.id === 'fusione' ? Math.max(scrapTop*.96, bathY) + .5 : 10.4;
   S.eY.forEach(s => s.t = tipY + 4.7);
   if (M.phase.id !== 'carica') { S.bx.t = -17; S.by.t = 17; S.br.t = 0; }
+  else if (t < .7) { S.bx.t = YARD_X; S.by.t = 9.3; S.br.t = 0; } // crane brings the bucket over the scale
   else if (t < 1.8) { S.bx.t = YARD_X; S.by.t = 3.83; S.br.t = 0; }
   else if (t < 3) { S.bx.t = 0; S.by.t = 9.3; S.br.t = 0; }
   else if (t < 5.4) { S.bx.t = 0; S.by.t = 9.3; S.br.t = 1.55; }
@@ -607,7 +608,7 @@ Object.assign(TW, { goPhase, goOverview, leaveOverview, goPlan, leavePlan });
 if (overview) { document.body.classList.add('ov'); az.set(OV.az); po.set(OV.po); S.cx.set(16.5); S.cr.set(46); } // open already framed on the whole chain
 if (reduce) document.getElementById('hint').textContent = 'Reduced motion is on: use the bar at the bottom.';
 let last = performance.now(); sync();
-[S.roof, S.roofLift, S.tilt, ...S.eY, S.bx, S.by, S.br, S.car, S.cx, S.cr].forEach(k => k.set(k.t));
+[S.roof, S.roofLift, S.tilt, ...S.eY, S.bx, S.by, S.br, S.car, S.cx, S.cr].forEach(k => k.set(k.t)); S.bx.set(-17); S.by.set(17); // the bucket arrives with the crane, never starts on the scale
 const SPEED = { carica: .7, fusione: 4.5, colata: 1.15, taglio: 1.25 }; // replay minutes per second, per phase
 function loop(now) {
   const dt = clamp((now - last)/1000, 0, .05); last = now;
